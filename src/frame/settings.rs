@@ -120,12 +120,10 @@ impl Settings {
     pub fn header_table_size(&self) -> Option<u32> {
         self.header_table_size
     }
-
-    /*
+    
     pub fn set_header_table_size(&mut self, size: Option<u32>) {
         self.header_table_size = size;
     }
-    */
 
     pub fn load(head: Head, payload: &[u8]) -> Result<Settings, Error> {
         use self::Setting::*;
