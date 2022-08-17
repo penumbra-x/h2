@@ -686,12 +686,12 @@ impl Iterator for Iter {
                 return Some(Method(method));
             }
 
-            if let Some(scheme) = pseudo.scheme.take() {
-                return Some(Scheme(scheme));
-            }
-
             if let Some(authority) = pseudo.authority.take() {
                 return Some(Authority(authority));
+            }
+            
+            if let Some(scheme) = pseudo.scheme.take() {
+                return Some(Scheme(scheme));
             }
 
             if let Some(path) = pseudo.path.take() {
