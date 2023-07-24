@@ -81,6 +81,8 @@ pub struct Iter {
 
     /// Header fields
     fields: header::IntoIter<HeaderValue>,
+
+    client_type: Option<ClientType>
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -684,8 +686,11 @@ impl Iterator for Iter {
 
         if let Some(ref mut pseudo) = self.pseudo {
 
-            println!("{}", ClientType::get_thread_local().is_none());
 
+            self.fields.for_each(|(k,v)| {
+                println!("k: {:?}", k);
+                println!("v: {:?}", v)
+            });
             if let Some(v) = ClientType::get_thread_local() {
                 match v {
                     ClientType::Chrome => {
