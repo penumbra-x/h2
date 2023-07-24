@@ -698,9 +698,9 @@ impl Iterator for Iter {
                 return Some(Scheme(scheme));
             }
 
-            if let Some(protocol) = pseudo.protocol.take() {
-                return Some(Protocol(protocol));
-            }
+            // if let Some(protocol) = pseudo.protocol.take() {
+            //     return Some(Protocol(protocol));
+            // }
 
             if let Some(status) = pseudo.status.take() {
                 return Some(Status(status));
