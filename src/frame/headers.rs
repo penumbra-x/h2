@@ -10,7 +10,6 @@ use bytes::{BufMut, Bytes, BytesMut};
 
 use std::fmt;
 use std::io::Cursor;
-use crate::impersonate::ClientType;
 
 type EncodeBuf<'a> = bytes::buf::Limit<&'a mut BytesMut>;
 /// Header frame
@@ -81,6 +80,8 @@ pub struct Iter {
 
     /// Header fields
     fields: header::IntoIter<HeaderValue>,
+
+    client_profile: Option<String>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -684,67 +685,61 @@ impl Iterator for Iter {
 
         if let Some(ref mut pseudo) = self.pseudo {
 
+            if let Some(v) = &self.client_profile {
+                match v.as_str() {
+                    "chrome" => {
+                        if let Some(method) = pseudo.method.take() {
+                            return Some(Method(method));
+                        }
 
-            self.fields.for_each(|(k,v)| {
-                println!("k: {:?}", k);
-                println!("v: {:?}", v)
-            });
-            // if let Some(v) = ClientType::get_thread_local() {
-            //     match v {
-            //         ClientType::Chrome => {
-            //             if let Some(method) = pseudo.method.take() {
-            //                 return Some(Method(method));
-            //             }
-            //
-            //             if let Some(authority) = pseudo.authority.take() {
-            //                 return Some(Authority(authority));
-            //             }
-            //
-            //             if let Some(scheme) = pseudo.scheme.take() {
-            //                 return Some(Scheme(scheme));
-            //             }
-            //
-            //             if let Some(path) = pseudo.path.take() {
-            //                 return Some(Path(path));
-            //             }
-            //         }
-            //         ClientType::OkHttp => {
-            //             if let Some(method) = pseudo.method.take() {
-            //                 return Some(Method(method));
-            //             }
-            //
-            //             if let Some(path) = pseudo.path.take() {
-            //                 return Some(Path(path));
-            //             }
-            //
-            //             if let Some(authority) = pseudo.authority.take() {
-            //                 return Some(Authority(authority));
-            //             }
-            //
-            //             if let Some(scheme) = pseudo.scheme.take() {
-            //                 return Some(Scheme(scheme));
-            //             }
-            //
-            //         }
-            //     }
-            // } else {
-            //
-            // }
+                        if let Some(authority) = pseudo.authority.take() {
+                            return Some(Authority(authority));
+                        }
 
-            if let Some(method) = pseudo.method.take() {
-                return Some(Method(method));
-            }
+                        if let Some(scheme) = pseudo.scheme.take() {
+                            return Some(Scheme(scheme));
+                        }
 
-            if let Some(scheme) = pseudo.scheme.take() {
-                return Some(Scheme(scheme));
-            }
+                        if let Some(path) = pseudo.path.take() {
+                            return Some(Path(path));
+                        }
+                    }
+                    "okhttp" => {
+                        if let Some(method) = pseudo.method.take() {
+                            return Some(Method(method));
+                        }
 
-            if let Some(authority) = pseudo.authority.take() {
-                return Some(Authority(authority));
-            }
+                        if let Some(path) = pseudo.path.take() {
+                            return Some(Path(path));
+                        }
 
-            if let Some(path) = pseudo.path.take() {
-                return Some(Path(path));
+                        if let Some(authority) = pseudo.authority.take() {
+                            return Some(Authority(authority));
+                        }
+
+                        if let Some(scheme) = pseudo.scheme.take() {
+                            return Some(Scheme(scheme));
+                        }
+
+                    }
+                    _ => {}
+                }
+            } else {
+                if let Some(method) = pseudo.method.take() {
+                    return Some(Method(method));
+                }
+
+                if let Some(scheme) = pseudo.scheme.take() {
+                    return Some(Scheme(scheme));
+                }
+
+                if let Some(authority) = pseudo.authority.take() {
+                    return Some(Authority(authority));
+                }
+
+                if let Some(path) = pseudo.path.take() {
+                    return Some(Path(path));
+                }
             }
 
             if let Some(protocol) = pseudo.protocol.take() {
@@ -969,9 +964,22 @@ impl HeaderBlock {
 
     fn into_encoding(self, encoder: &mut hpack::Encoder) -> EncodingHeaderBlock {
         let mut hpack = BytesMut::new();
+        let mut fields = self.fields.clone();
+        let client = if let Some(v) = fields.get("client_profile") {
+            let v = v.clone();
+            fields.remove("client_profile");
+            match v.to_str() {
+                Ok(v) => Some(String::from(v)),
+                Err(_) => None,
+            }
+        } else {
+            None
+        };
+
         let headers = Iter {
             pseudo: Some(self.pseudo),
-            fields: self.fields.into_iter(),
+            fields: fields.into_iter(),
+            client_profile: client
         };
 
         encoder.encode(headers, &mut hpack);
