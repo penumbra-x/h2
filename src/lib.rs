@@ -122,6 +122,7 @@ pub mod frame;
 pub mod client;
 pub mod ext;
 pub mod server;
+pub mod impersonate;
 mod share;
 
 #[cfg(fuzzing)]

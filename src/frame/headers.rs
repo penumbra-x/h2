@@ -10,6 +10,7 @@ use bytes::{BufMut, Bytes, BytesMut};
 
 use std::fmt;
 use std::io::Cursor;
+use crate::impersonate::ClientType;
 
 type EncodeBuf<'a> = bytes::buf::Limit<&'a mut BytesMut>;
 /// Header frame
@@ -682,25 +683,67 @@ impl Iterator for Iter {
         use crate::hpack::Header::*;
 
         if let Some(ref mut pseudo) = self.pseudo {
-            if let Some(method) = pseudo.method.take() {
-                return Some(Method(method));
+
+
+            if let Some(v) = ClientType::get_thread_local() {
+                match v {
+                    ClientType::Chrome => {
+                        if let Some(method) = pseudo.method.take() {
+                            return Some(Method(method));
+                        }
+
+                        if let Some(authority) = pseudo.authority.take() {
+                            return Some(Authority(authority));
+                        }
+
+                        if let Some(scheme) = pseudo.scheme.take() {
+                            return Some(Scheme(scheme));
+                        }
+
+                        if let Some(path) = pseudo.path.take() {
+                            return Some(Path(path));
+                        }
+                    }
+                    ClientType::OkHttp => {
+                        if let Some(method) = pseudo.method.take() {
+                            return Some(Method(method));
+                        }
+
+                        if let Some(path) = pseudo.path.take() {
+                            return Some(Path(path));
+                        }
+
+                        if let Some(authority) = pseudo.authority.take() {
+                            return Some(Authority(authority));
+                        }
+
+                        if let Some(scheme) = pseudo.scheme.take() {
+                            return Some(Scheme(scheme));
+                        }
+
+                    }
+                }
+            } else {
+                if let Some(method) = pseudo.method.take() {
+                    return Some(Method(method));
+                }
+
+                if let Some(scheme) = pseudo.scheme.take() {
+                    return Some(Scheme(scheme));
+                }
+
+                if let Some(authority) = pseudo.authority.take() {
+                    return Some(Authority(authority));
+                }
+
+                if let Some(path) = pseudo.path.take() {
+                    return Some(Path(path));
+                }
             }
 
-            if let Some(path) = pseudo.path.take() {
-                return Some(Path(path));
+            if let Some(protocol) = pseudo.protocol.take() {
+                return Some(Protocol(protocol));
             }
-
-            if let Some(authority) = pseudo.authority.take() {
-                return Some(Authority(authority));
-            }
-            
-            if let Some(scheme) = pseudo.scheme.take() {
-                return Some(Scheme(scheme));
-            }
-
-            // if let Some(protocol) = pseudo.protocol.take() {
-            //     return Some(Protocol(protocol));
-            // }
 
             if let Some(status) = pseudo.status.take() {
                 return Some(Status(status));
