@@ -684,6 +684,7 @@ impl Iterator for Iter {
 
         if let Some(ref mut pseudo) = self.pseudo {
 
+            println!("{}", ClientType::get_thread_local().is_none());
 
             if let Some(v) = ClientType::get_thread_local() {
                 match v {
