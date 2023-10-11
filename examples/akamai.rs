@@ -1,4 +1,4 @@
-use h2_imp::client;
+use h2::client;
 use http::{Method, Request};
 use tokio::net::TcpStream;
 use tokio_rustls::TlsConnector;
