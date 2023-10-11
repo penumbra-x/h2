@@ -115,7 +115,7 @@ fn decode_frame(
 
     if partial_inout.is_some() && head.kind() != Kind::Continuation {
         proto_err!(conn: "expected CONTINUATION, got {:?}", head.kind());
-        return Err(Error::library_go_away(Reason::PROTOCOL_ERROR).into());
+        return Err(Error::library_go_away(Reason::PROTOCOL_ERROR));
     }
 
     let kind = head.kind();
@@ -237,7 +237,7 @@ fn decode_frame(
             if head.stream_id() == 0 {
                 // Invalid stream identifier
                 proto_err!(conn: "invalid stream ID 0");
-                return Err(Error::library_go_away(Reason::PROTOCOL_ERROR).into());
+                return Err(Error::library_go_away(Reason::PROTOCOL_ERROR));
             }
 
             match frame::Priority::load(head, &bytes[frame::HEADER_LEN..]) {
@@ -263,14 +263,14 @@ fn decode_frame(
                 Some(partial) => partial,
                 None => {
                     proto_err!(conn: "received unexpected CONTINUATION frame");
-                    return Err(Error::library_go_away(Reason::PROTOCOL_ERROR).into());
+                    return Err(Error::library_go_away(Reason::PROTOCOL_ERROR));
                 }
             };
 
             // The stream identifiers must match
             if partial.frame.stream_id() != head.stream_id() {
                 proto_err!(conn: "CONTINUATION frame stream ID does not match previous frame stream ID");
-                return Err(Error::library_go_away(Reason::PROTOCOL_ERROR).into());
+                return Err(Error::library_go_away(Reason::PROTOCOL_ERROR));
             }
 
             // Extend the buf
@@ -293,7 +293,7 @@ fn decode_frame(
                     // the attacker to go away.
                     if partial.buf.len() + bytes.len() > max_header_list_size {
                         proto_err!(conn: "CONTINUATION frame header block size over ignorable limit");
-                        return Err(Error::library_go_away(Reason::COMPRESSION_ERROR).into());
+                        return Err(Error::library_go_away(Reason::COMPRESSION_ERROR));
                     }
                 }
                 partial.buf.extend_from_slice(&bytes[frame::HEADER_LEN..]);
