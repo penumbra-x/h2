@@ -1,5 +1,5 @@
 [package]
-name = "h2"
+name = "h2_imp"
 # When releasing to crates.io:
 # - Update doc URL.
 #   - html_root_url.
