@@ -687,7 +687,6 @@ impl Iterator for Iter {
         use crate::hpack::Header::*;
 
         if let Some(ref mut pseudo) = self.pseudo {
-
             if let Some(v) = &self.client_profile {
                 match v.as_str() {
                     "chrome" => {
@@ -723,7 +722,23 @@ impl Iterator for Iter {
                         if let Some(scheme) = pseudo.scheme.take() {
                             return Some(Scheme(scheme));
                         }
+                    }
+                    "safari" => {
+                        if let Some(method) = pseudo.method.take() {
+                            return Some(Method(method));
+                        }
 
+                        if let Some(scheme) = pseudo.scheme.take() {
+                            return Some(Scheme(scheme));
+                        }
+
+                        if let Some(path) = pseudo.path.take() {
+                            return Some(Path(path));
+                        }
+
+                        if let Some(authority) = pseudo.authority.take() {
+                            return Some(Authority(authority));
+                        }
                     }
                     _ => {}
                 }
@@ -982,7 +997,7 @@ impl HeaderBlock {
         let headers = Iter {
             pseudo: Some(self.pseudo),
             fields: fields.into_iter(),
-            client_profile: client
+            client_profile: client,
         };
 
         encoder.encode(headers, &mut hpack);
