@@ -1,5 +1,5 @@
 [package]
-name = "h2_imp"
+name = "h2-imp"
 # When releasing to crates.io:
 # - Update doc URL.
 #   - html_root_url.
@@ -47,7 +47,7 @@ futures-util = { version = "0.3", default-features = false }
 tokio-util = { version = "0.7.1", features = ["codec", "io"] }
 tokio = { version = "1", features = ["io-util"] }
 bytes = "1"
-http = "0.2"
+http = "0.2.11"
 tracing = { version = "0.1.32", default-features = false, features = ["std"] }
 fnv = "1.0.5"
 slab = "0.4.2"
