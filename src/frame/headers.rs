@@ -2,6 +2,7 @@ use super::{util, StreamDependency, StreamId};
 use crate::ext::Protocol;
 use crate::frame::{Error, Frame, Head, Kind};
 use crate::hpack::{self, BytesStr};
+use crate::profile::AgentProfile;
 
 use http::header::{self, HeaderName, HeaderValue};
 use http::{uri, HeaderMap, Method, Request, StatusCode, Uri};
@@ -81,7 +82,7 @@ pub struct Iter {
     /// Header fields
     fields: header::IntoIter<HeaderValue>,
 
-    client_profile: Option<String>,
+    _profile: AgentProfile,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -687,76 +688,75 @@ impl Iterator for Iter {
         use crate::hpack::Header::*;
 
         if let Some(ref mut pseudo) = self.pseudo {
-            if let Some(v) = &self.client_profile {
-                match v.as_str() {
-                    "chrome" => {
-                        if let Some(method) = pseudo.method.take() {
-                            return Some(Method(method));
-                        }
-
-                        if let Some(authority) = pseudo.authority.take() {
-                            return Some(Authority(authority));
-                        }
-
-                        if let Some(scheme) = pseudo.scheme.take() {
-                            return Some(Scheme(scheme));
-                        }
-
-                        if let Some(path) = pseudo.path.take() {
-                            return Some(Path(path));
-                        }
+            match self._profile {
+                AgentProfile::Chrome | AgentProfile::Edge => {
+                    if let Some(method) = pseudo.method.take() {
+                        return Some(Method(method));
                     }
-                    "okhttp" => {
-                        if let Some(method) = pseudo.method.take() {
-                            return Some(Method(method));
-                        }
 
-                        if let Some(path) = pseudo.path.take() {
-                            return Some(Path(path));
-                        }
-
-                        if let Some(authority) = pseudo.authority.take() {
-                            return Some(Authority(authority));
-                        }
-
-                        if let Some(scheme) = pseudo.scheme.take() {
-                            return Some(Scheme(scheme));
-                        }
+                    if let Some(authority) = pseudo.authority.take() {
+                        return Some(Authority(authority));
                     }
-                    "safari" => {
-                        if let Some(method) = pseudo.method.take() {
-                            return Some(Method(method));
-                        }
 
-                        if let Some(scheme) = pseudo.scheme.take() {
-                            return Some(Scheme(scheme));
-                        }
-
-                        if let Some(path) = pseudo.path.take() {
-                            return Some(Path(path));
-                        }
-
-                        if let Some(authority) = pseudo.authority.take() {
-                            return Some(Authority(authority));
-                        }
+                    if let Some(scheme) = pseudo.scheme.take() {
+                        return Some(Scheme(scheme));
                     }
-                    _ => {}
+
+                    if let Some(path) = pseudo.path.take() {
+                        return Some(Path(path));
+                    }
                 }
-            } else {
-                if let Some(method) = pseudo.method.take() {
-                    return Some(Method(method));
+                AgentProfile::OkHttp => {
+                    if let Some(method) = pseudo.method.take() {
+                        return Some(Method(method));
+                    }
+
+                    if let Some(path) = pseudo.path.take() {
+                        return Some(Path(path));
+                    }
+
+                    if let Some(authority) = pseudo.authority.take() {
+                        return Some(Authority(authority));
+                    }
+
+                    if let Some(scheme) = pseudo.scheme.take() {
+                        return Some(Scheme(scheme));
+                    }
+                }
+                AgentProfile::Safari => {
+                    if let Some(method) = pseudo.method.take() {
+                        return Some(Method(method));
+                    }
+
+                    if let Some(scheme) = pseudo.scheme.take() {
+                        return Some(Scheme(scheme));
+                    }
+
+                    if let Some(path) = pseudo.path.take() {
+                        return Some(Path(path));
+                    }
+
+                    if let Some(authority) = pseudo.authority.take() {
+                        return Some(Authority(authority));
+                    }
                 }
 
-                if let Some(scheme) = pseudo.scheme.take() {
-                    return Some(Scheme(scheme));
-                }
+                AgentProfile::Firefox => {
+                    if let Some(method) = pseudo.method.take() {
+                        return Some(Method(method));
+                    }
 
-                if let Some(authority) = pseudo.authority.take() {
-                    return Some(Authority(authority));
-                }
+                    if let Some(path) = pseudo.path.take() {
+                        return Some(Path(path));
+                    }
 
-                if let Some(path) = pseudo.path.take() {
-                    return Some(Path(path));
+                    if let Some(authority) = pseudo.authority.take() {
+                        return Some(Authority(authority));
+                    }
+
+                    if let Some(scheme) = pseudo.scheme.take() {
+                        return Some(Scheme(scheme));
+                    }
                 }
             }
 
@@ -983,21 +983,12 @@ impl HeaderBlock {
     fn into_encoding(self, encoder: &mut hpack::Encoder) -> EncodingHeaderBlock {
         let mut hpack = BytesMut::new();
         let mut fields = self.fields.clone();
-        let client = if let Some(v) = fields.get("client_profile") {
-            let v = v.clone();
-            fields.remove("client_profile");
-            match v.to_str() {
-                Ok(v) => Some(String::from(v)),
-                Err(_) => None,
-            }
-        } else {
-            None
-        };
+        let _profile = AgentProfile::from(&mut fields);
 
         let headers = Iter {
             pseudo: Some(self.pseudo),
             fields: fields.into_iter(),
-            client_profile: client,
+            _profile,
         };
 
         encoder.encode(headers, &mut hpack);

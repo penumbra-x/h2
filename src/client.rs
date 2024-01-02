@@ -138,6 +138,7 @@
 use crate::codec::{Codec, SendError, UserError};
 use crate::ext::Protocol;
 use crate::frame::{Headers, Pseudo, Reason, Settings, StreamId};
+use crate::profile::AgentProfile;
 use crate::proto::{self, Error};
 use crate::{FlowControl, PingPong, RecvStream, SendStream};
 
@@ -336,6 +337,9 @@ pub struct Builder {
     /// The stream ID of the first (lowest) stream. Subsequent streams will use
     /// monotonically increasing stream IDs.
     stream_id: StreamId,
+
+    /// Profile Settings
+    _profile: AgentProfile,
 }
 
 #[derive(Debug)]
@@ -645,7 +649,14 @@ impl Builder {
             initial_max_send_streams: usize::MAX,
             settings: Default::default(),
             stream_id: 1.into(),
+            _profile: AgentProfile::default(),
         }
+    }
+
+    /// Use the profile to configure the client.
+    pub fn profile(&mut self, profile: AgentProfile) -> &mut Self {
+        self._profile = profile;
+        self
     }
 
     /// Indicates the initial window size (in octets) for stream-level
@@ -1281,7 +1292,7 @@ where
 
         // Send initial settings frame
         codec
-            .buffer(builder.settings.clone().into())
+            .buffer((builder.settings.clone(), builder._profile).into())
             .expect("invalid SETTINGS frame");
 
         let inner = proto::Connection::new(

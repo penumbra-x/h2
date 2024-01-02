@@ -139,3 +139,6 @@ pub use crate::share::{FlowControl, Ping, PingPong, Pong, RecvStream, SendStream
 
 #[cfg(feature = "unstable")]
 pub use codec::{Codec, SendError, UserError};
+
+#[allow(missing_docs)]
+pub mod profile;

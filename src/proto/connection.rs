@@ -491,7 +491,7 @@ where
                 tracing::trace!(?frame, "recv PUSH_PROMISE");
                 self.streams.recv_push_promise(frame)?;
             }
-            Some(Settings(frame)) => {
+            Some(Settings(frame, _)) => {
                 tracing::trace!(?frame, "recv SETTINGS");
                 return Ok(ReceivedFrame::Settings(frame));
             }

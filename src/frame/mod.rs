@@ -1,4 +1,5 @@
 use crate::hpack;
+use crate::profile::AgentProfile;
 
 use bytes::Bytes;
 
@@ -82,7 +83,7 @@ pub enum Frame<T = Bytes> {
     Headers(Headers),
     Priority(Priority),
     PushPromise(PushPromise),
-    Settings(Settings),
+    Settings(Settings, AgentProfile),
     Ping(Ping),
     GoAway(GoAway),
     WindowUpdate(WindowUpdate),
@@ -101,7 +102,7 @@ impl<T> Frame<T> {
             Headers(frame) => frame.into(),
             Priority(frame) => frame.into(),
             PushPromise(frame) => frame.into(),
-            Settings(frame) => frame.into(),
+            Settings(frame, _) => frame.into(),
             Ping(frame) => frame.into(),
             GoAway(frame) => frame.into(),
             WindowUpdate(frame) => frame.into(),
@@ -119,7 +120,7 @@ impl<T> fmt::Debug for Frame<T> {
             Headers(ref frame) => fmt::Debug::fmt(frame, fmt),
             Priority(ref frame) => fmt::Debug::fmt(frame, fmt),
             PushPromise(ref frame) => fmt::Debug::fmt(frame, fmt),
-            Settings(ref frame) => fmt::Debug::fmt(frame, fmt),
+            Settings(ref frame, _) => fmt::Debug::fmt(frame, fmt),
             Ping(ref frame) => fmt::Debug::fmt(frame, fmt),
             GoAway(ref frame) => fmt::Debug::fmt(frame, fmt),
             WindowUpdate(ref frame) => fmt::Debug::fmt(frame, fmt),
