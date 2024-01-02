@@ -47,7 +47,7 @@ futures-util = { version = "0.3", default-features = false }
 tokio-util = { version = "0.7.1", features = ["codec", "io"] }
 tokio = { version = "1", features = ["io-util"] }
 bytes = "1"
-http = "0.2"
+http = "0.2.11"
 tracing = { version = "0.1.35", default-features = false, features = ["std"] }
 fnv = "1.0.5"
 slab = "0.4.2"
@@ -70,7 +70,7 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "net"]
 env_logger = { version = "0.10", default-features = false }
 tokio-rustls = "0.24"
 webpki-roots = "0.25"
-h2 = { package = "h2_imp", version = "*" }
+h2 = { package = "h2_imp", version = "0.3.22" }
 
 [package.metadata.docs.rs]
 features = ["stream"]
