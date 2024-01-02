@@ -1456,6 +1456,83 @@ async fn extended_connect_request() {
 async fn client_builder_header_table_size() {
     h2_support::trace_init!();
     let (io, mut srv) = mock::new();
+
+    let srv = async move {
+        let settings = srv.assert_client_handshake().await;
+        assert_default_settings!(settings);
+        srv.send_frame(frames::headers(1)).await;
+        srv.recv_frame(frames::go_away(0).protocol_error()).await;
+    };
+
+    let h2 = async move {
+        let (_client, h2) = client::handshake(io).await.unwrap();
+
+        let err = h2.await.unwrap_err();
+        assert!(err.is_go_away());
+        assert_eq!(err.reason(), Some(Reason::PROTOCOL_ERROR));
+    };
+
+    join(srv, h2).await;
+}
+
+#[tokio::test]
+async fn rogue_server_even_headers() {
+    h2_support::trace_init!();
+    let (io, mut srv) = mock::new();
+
+    let srv = async move {
+        let settings = srv.assert_client_handshake().await;
+        assert_default_settings!(settings);
+        srv.send_frame(frames::headers(2)).await;
+        srv.recv_frame(frames::go_away(0).protocol_error()).await;
+    };
+
+    let h2 = async move {
+        let (_client, h2) = client::handshake(io).await.unwrap();
+
+        let err = h2.await.unwrap_err();
+        assert!(err.is_go_away());
+        assert_eq!(err.reason(), Some(Reason::PROTOCOL_ERROR));
+    };
+
+    join(srv, h2).await;
+}
+
+#[tokio::test]
+async fn rogue_server_reused_headers() {
+    h2_support::trace_init!();
+    let (io, mut srv) = mock::new();
+
+    let srv = async move {
+        let settings = srv.assert_client_handshake().await;
+        assert_default_settings!(settings);
+
+        srv.recv_frame(
+            frames::headers(1)
+                .request("GET", "https://example.com/")
+                .eos(),
+        )
+        .await;
+        srv.send_frame(frames::headers(1).response(200).eos()).await;
+    };
+
+    let mut builder = client::Builder::new();
+    builder.header_table_size(10000);
+
+    let h2 = async move {
+        let (mut client, mut h2) = builder.handshake::<_, Bytes>(io).await.unwrap();
+        let request = Request::get("https://example.com/").body(()).unwrap();
+        let (response, _) = client.send_request(request, true).unwrap();
+        h2.drive(response).await.unwrap();
+    };
+
+    join(srv, h2).await;
+}
+
+#[tokio::test]
+async fn client_builder_header_table_size() {
+    h2_support::trace_init!();
+    let (io, mut srv) = mock::new();
     let mut settings = frame::Settings::default();
 
     settings.set_header_table_size(Some(10000));
