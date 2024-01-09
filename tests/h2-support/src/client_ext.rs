@@ -1,3 +1,4 @@
+use h2_imp as h2;
 use bytes::Buf;
 use h2::client::{ResponseFuture, SendRequest};
 use http::Request;

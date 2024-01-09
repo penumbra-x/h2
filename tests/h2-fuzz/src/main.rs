@@ -1,3 +1,4 @@
+use h2_imp as h2;
 use futures::future;
 use futures::stream::FuturesUnordered;
 use futures::Stream;

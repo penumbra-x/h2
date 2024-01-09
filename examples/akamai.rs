@@ -1,3 +1,4 @@
+use h2_imp as h2;
 use h2::client;
 use http::{Method, Request};
 use tokio::net::TcpStream;

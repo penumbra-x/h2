@@ -6,7 +6,7 @@ publish = false
 edition = "2018"
 
 [dependencies]
-h2 = { package = "h2_imp", version = "0.3.21", features = ["stream", "unstable"] }
+h2_imp = { path = "../..", features = ["stream", "unstable"] }
 
 atty = "0.2"
 bytes = "1"

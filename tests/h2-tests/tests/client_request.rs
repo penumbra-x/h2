@@ -1530,7 +1530,7 @@ async fn rogue_server_reused_headers() {
 }
 
 #[tokio::test]
-async fn client_builder_header_table_size() {
+async fn client_builder_header_table_size_1() {
     h2_support::trace_init!();
     let (io, mut srv) = mock::new();
     let mut settings = frame::Settings::default();

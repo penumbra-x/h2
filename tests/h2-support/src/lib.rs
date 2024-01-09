@@ -1,5 +1,6 @@
 //! Utilities to support tests.
 
+use h2_imp as h2;
 #[macro_use]
 pub mod assert;
 
