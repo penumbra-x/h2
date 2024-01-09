@@ -1,3 +1,12 @@
+# 0.4.1 (January 8, 2024)
+
+* Fix assigning connection capacity which could starve streams in some instances.
+
+# 0.4.0 (November 15, 2023)
+
+* Update to `http` 1.0.
+* Remove deprecated `Server::poll_close()`.
+
 # 0.3.22 (November 15, 2023)
 
 * Add `header_table_size(usize)` option to client and server builders.
