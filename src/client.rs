@@ -656,7 +656,15 @@ impl Builder {
             settings: Default::default(),
             stream_id: 1.into(),
             local_max_error_reset_streams: Some(proto::DEFAULT_LOCAL_RESET_COUNT_MAX),
+            _profile: AgentProfile::default(),
         }
+    }
+
+
+    /// Use the profile to configure the client.
+    pub fn profile(&mut self, profile: AgentProfile) -> &mut Self {
+        self._profile = profile;
+        self
     }
 
     /// Indicates the initial window size (in octets) for stream-level
