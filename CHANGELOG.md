@@ -1,3 +1,14 @@
+# 0.4.3 (March 15, 2024)
+
+* Fix flow control limits to not apply until receiving SETTINGS ack.
+* Fix not returning an error if IO ended without `close_notify`.
+* Improve performance of decoding many headers.
+
+# 0.4.2 (January 17th, 2024)
+
+* Limit error resets for misbehaving connections.
+* Fix selecting MAX_CONCURRENT_STREAMS value if no value is advertised initially.
+
 # 0.4.1 (January 8, 2024)
 
 * Fix assigning connection capacity which could starve streams in some instances.

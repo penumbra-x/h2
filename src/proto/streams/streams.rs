@@ -186,14 +186,18 @@ where
         me.poll_complete(&self.send_buffer, cx, dst)
     }
 
-    pub fn apply_remote_settings(&mut self, frame: &frame::Settings) -> Result<(), Error> {
+    pub fn apply_remote_settings(
+        &mut self,
+        frame: &frame::Settings,
+        is_initial: bool,
+    ) -> Result<(), Error> {
         let mut me = self.inner.lock().unwrap();
         let me = &mut *me;
 
         let mut send_buffer = self.send_buffer.inner.lock().unwrap();
         let send_buffer = &mut *send_buffer;
 
-        me.counts.apply_remote_settings(frame);
+        me.counts.apply_remote_settings(frame, is_initial);
 
         me.actions.send.apply_remote_settings(
             frame,
@@ -319,6 +323,14 @@ where
 }
 
 impl<B> DynStreams<'_, B> {
+    pub fn is_buffer_empty(&self) -> bool {
+        self.send_buffer.is_empty()
+    }
+
+    pub fn is_server(&self) -> bool {
+        self.peer.is_server()
+    }
+
     pub fn recv_headers(&mut self, frame: frame::Headers) -> Result<(), Error> {
         let mut me = self.inner.lock().unwrap();
 
@@ -1504,6 +1516,11 @@ impl<B> SendBuffer<B> {
     fn new() -> Self {
         let inner = Mutex::new(Buffer::new());
         SendBuffer { inner }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        let buf = self.inner.lock().unwrap();
+        buf.is_empty()
     }
 }
 
