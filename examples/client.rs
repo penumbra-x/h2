@@ -1,5 +1,5 @@
-use h2_imp as h2;
 use h2::client;
+use h2_imp as h2;
 use http::{HeaderMap, Request};
 
 use std::error::Error;

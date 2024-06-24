@@ -1,6 +1,6 @@
-use h2_imp as h2;
 use bytes::Buf;
 use h2::client::{ResponseFuture, SendRequest};
+use h2_imp as h2;
 use http::Request;
 
 /// Extend the `h2::client::SendRequest` type with convenience methods.

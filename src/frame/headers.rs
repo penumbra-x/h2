@@ -997,15 +997,13 @@ impl HeaderBlock {
         Ok(())
     }
 
-    fn into_encoding(self, encoder: &mut hpack::Encoder) -> EncodingHeaderBlock {
+    fn into_encoding(mut self, encoder: &mut hpack::Encoder) -> EncodingHeaderBlock {
         let mut hpack = BytesMut::new();
-        let mut fields = self.fields.clone();
-        let _profile = AgentProfile::from(&mut fields);
 
         let headers = Iter {
+            _profile: AgentProfile::from(&mut self.fields),
             pseudo: Some(self.pseudo),
-            fields: fields.into_iter(),
-            _profile,
+            fields: self.fields.into_iter(),
         };
 
         encoder.encode(headers, &mut hpack);

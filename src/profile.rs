@@ -58,14 +58,23 @@ impl From<&str> for AgentProfile {
 /// Convert HeaderMap to profile, will remove the header
 impl From<&mut HeaderMap> for AgentProfile {
     fn from(headers: &mut HeaderMap) -> Self {
-        let profile = match headers.get(X_CLIENT_PROFILE) {
-            Some(profile) => match profile.to_str() {
-                Ok(v) => Self::from(v),
-                Err(_) => Self::Chrome,
-            },
-            None => Self::Chrome,
-        };
-        headers.remove(X_CLIENT_PROFILE);
+        let profile = headers
+            .get(X_CLIENT_PROFILE)
+            .and_then(|v| v.to_str().ok().map(Self::from))
+            .unwrap_or(Self::Chrome);
+
+        // Create a new HeaderMap to preserve the order of headers while removing X_CLIENT_PROFILE.
+        let mut new_headers = HeaderMap::new();
+        for (name, value) in headers.iter() {
+            // Insert all headers into the new map except for X_CLIENT_PROFILE.
+            if !name.as_str().eq(X_CLIENT_PROFILE) {
+                new_headers.insert(name, value.clone());
+            }
+        }
+
+        // Replace the original headers with the new set, effectively removing X_CLIENT_PROFILE.
+        *headers = new_headers;
+
         profile
     }
 }

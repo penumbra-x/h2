@@ -672,7 +672,6 @@ impl Builder {
         }
     }
 
-
     /// Use the profile to configure the client.
     pub fn profile(&mut self, profile: AgentProfile) -> &mut Self {
         self._profile = profile;

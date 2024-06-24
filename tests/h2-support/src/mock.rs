@@ -1,5 +1,5 @@
-use h2_imp as h2;
 use crate::SendFrame;
+use h2_imp as h2;
 
 use h2::frame::{self, Frame};
 use h2::proto::Error;
