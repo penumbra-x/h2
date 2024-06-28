@@ -1,5 +1,7 @@
 use http::HeaderMap;
 
+use crate::frame::PseudoType;
+
 const X_CLIENT_PROFILE: &str = "x-client-profile";
 
 /// This is the default user agent profile used by the library.
@@ -51,6 +53,37 @@ impl From<&str> for AgentProfile {
             "edge" => AgentProfile::Edge,
             "okhttp" => AgentProfile::OkHttp,
             _ => AgentProfile::Chrome,
+        }
+    }
+}
+
+impl Into<[PseudoType; 4]> for AgentProfile {
+    fn into(self) -> [PseudoType; 4] {
+        match self {
+            AgentProfile::Chrome | AgentProfile::Edge => [
+                PseudoType::Method,
+                PseudoType::Authority,
+                PseudoType::Scheme,
+                PseudoType::Path,
+            ],
+            AgentProfile::OkHttp => [
+                PseudoType::Method,
+                PseudoType::Path,
+                PseudoType::Authority,
+                PseudoType::Scheme,
+            ],
+            AgentProfile::Safari => [
+                PseudoType::Method,
+                PseudoType::Scheme,
+                PseudoType::Path,
+                PseudoType::Authority,
+            ],
+            AgentProfile::Firefox => [
+                PseudoType::Method,
+                PseudoType::Path,
+                PseudoType::Authority,
+                PseudoType::Scheme,
+            ],
         }
     }
 }

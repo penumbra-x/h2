@@ -75,15 +75,24 @@ pub struct Pseudo {
     pub status: Option<StatusCode>,
 }
 
+#[derive(Debug, Eq, PartialEq)]
+pub(crate) enum PseudoType {
+    Method,
+    Scheme,
+    Authority,
+    Path,
+}
+
 #[derive(Debug)]
 pub struct Iter {
     /// Pseudo headers
     pseudo: Option<Pseudo>,
 
+    // Pseudo profile
+    pseudo_order: [PseudoType; 4],
+
     /// Header fields
     fields: header::IntoIter<HeaderValue>,
-
-    _profile: AgentProfile,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -703,74 +712,27 @@ impl Iterator for Iter {
         use crate::hpack::Header::*;
 
         if let Some(ref mut pseudo) = self.pseudo {
-            match self._profile {
-                AgentProfile::Chrome | AgentProfile::Edge => {
-                    if let Some(method) = pseudo.method.take() {
-                        return Some(Method(method));
+            for pseudo_type in self.pseudo_order.as_ref() {
+                match pseudo_type {
+                    PseudoType::Method => {
+                        if let Some(method) = pseudo.method.take() {
+                            return Some(Method(method));
+                        }
                     }
-
-                    if let Some(authority) = pseudo.authority.take() {
-                        return Some(Authority(authority));
+                    PseudoType::Scheme => {
+                        if let Some(scheme) = pseudo.scheme.take() {
+                            return Some(Scheme(scheme));
+                        }
                     }
-
-                    if let Some(scheme) = pseudo.scheme.take() {
-                        return Some(Scheme(scheme));
+                    PseudoType::Authority => {
+                        if let Some(authority) = pseudo.authority.take() {
+                            return Some(Authority(authority));
+                        }
                     }
-
-                    if let Some(path) = pseudo.path.take() {
-                        return Some(Path(path));
-                    }
-                }
-                AgentProfile::OkHttp => {
-                    if let Some(method) = pseudo.method.take() {
-                        return Some(Method(method));
-                    }
-
-                    if let Some(path) = pseudo.path.take() {
-                        return Some(Path(path));
-                    }
-
-                    if let Some(authority) = pseudo.authority.take() {
-                        return Some(Authority(authority));
-                    }
-
-                    if let Some(scheme) = pseudo.scheme.take() {
-                        return Some(Scheme(scheme));
-                    }
-                }
-                AgentProfile::Safari => {
-                    if let Some(method) = pseudo.method.take() {
-                        return Some(Method(method));
-                    }
-
-                    if let Some(scheme) = pseudo.scheme.take() {
-                        return Some(Scheme(scheme));
-                    }
-
-                    if let Some(path) = pseudo.path.take() {
-                        return Some(Path(path));
-                    }
-
-                    if let Some(authority) = pseudo.authority.take() {
-                        return Some(Authority(authority));
-                    }
-                }
-
-                AgentProfile::Firefox => {
-                    if let Some(method) = pseudo.method.take() {
-                        return Some(Method(method));
-                    }
-
-                    if let Some(path) = pseudo.path.take() {
-                        return Some(Path(path));
-                    }
-
-                    if let Some(authority) = pseudo.authority.take() {
-                        return Some(Authority(authority));
-                    }
-
-                    if let Some(scheme) = pseudo.scheme.take() {
-                        return Some(Scheme(scheme));
+                    PseudoType::Path => {
+                        if let Some(path) = pseudo.path.take() {
+                            return Some(Path(path));
+                        }
                     }
                 }
             }
@@ -999,9 +961,9 @@ impl HeaderBlock {
 
     fn into_encoding(mut self, encoder: &mut hpack::Encoder) -> EncodingHeaderBlock {
         let mut hpack = BytesMut::new();
-
+        let profile = AgentProfile::from(&mut self.fields);
         let headers = Iter {
-            _profile: AgentProfile::from(&mut self.fields),
+            pseudo_order: profile.into(),
             pseudo: Some(self.pseudo),
             fields: self.fields.into_iter(),
         };
