@@ -17,8 +17,17 @@ pub enum AgentProfile {
 
 impl AgentProfile {
     /// To header (key, value)
-    pub fn to_header(&self) -> (&'static str, String) {
-        (X_CLIENT_PROFILE, self.to_string())
+    pub fn to_header(&self) -> (&'static str, &'static str) {
+        (
+            X_CLIENT_PROFILE,
+            match self {
+                AgentProfile::Chrome => "chrome",
+                AgentProfile::Firefox => "firefox",
+                AgentProfile::Safari => "safari",
+                AgentProfile::Edge => "edge",
+                AgentProfile::OkHttp => "okhttp",
+            },
+        )
     }
 }
 
@@ -26,20 +35,6 @@ impl AgentProfile {
 impl Default for AgentProfile {
     fn default() -> Self {
         AgentProfile::Chrome
-    }
-}
-
-/// Convert the profile to a string
-impl ToString for AgentProfile {
-    fn to_string(&self) -> String {
-        match self {
-            AgentProfile::Chrome => "chrome",
-            AgentProfile::Firefox => "firefox",
-            AgentProfile::Safari => "safari",
-            AgentProfile::Edge => "edge",
-            AgentProfile::OkHttp => "okhttp",
-        }
-        .to_owned()
     }
 }
 
