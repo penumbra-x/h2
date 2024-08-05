@@ -117,6 +117,7 @@
 
 use crate::codec::{Codec, UserError};
 use crate::frame::{self, Pseudo, PushPromiseHeaderError, Reason, Settings, StreamId};
+use crate::profile::AgentProfile;
 use crate::proto::{self, Config, Error, Prioritized};
 use crate::{FlowControl, PingPong, RecvStream, SendStream};
 
@@ -1448,6 +1449,7 @@ impl Peer {
         stream_id: StreamId,
         promised_id: StreamId,
         request: Request<()>,
+        profile: AgentProfile,
     ) -> Result<frame::PushPromise, UserError> {
         use http::request::Parts;
 
@@ -1479,7 +1481,7 @@ impl Peer {
             _,
         ) = request.into_parts();
 
-        let pseudo = Pseudo::request(method, uri, None);
+        let pseudo = Pseudo::request(method, uri, None, profile);
 
         Ok(frame::PushPromise::new(
             stream_id,

@@ -4,6 +4,7 @@ use super::{Buffer, Config, Counts, Prioritized, Recv, Send, Stream, StreamId};
 use crate::codec::{Codec, SendError, UserError};
 use crate::ext::Protocol;
 use crate::frame::{self, Frame, Reason};
+use crate::profile::AgentProfile;
 use crate::proto::{peer, Error, Initiator, Open, Peer, WindowSize};
 use crate::{client, proto, server};
 
@@ -220,6 +221,7 @@ where
         mut request: Request<()>,
         end_of_stream: bool,
         pending: Option<&OpaqueStreamRef>,
+        profile: AgentProfile,
     ) -> Result<(StreamRef<B>, bool), SendError> {
         use super::stream::ContentLength;
         use http::Method;
@@ -273,8 +275,13 @@ where
         }
 
         // Convert the message
-        let headers =
-            client::Peer::convert_send_message(stream_id, request, protocol, end_of_stream)?;
+        let headers = client::Peer::convert_send_message(
+            stream_id,
+            request,
+            protocol,
+            end_of_stream,
+            profile,
+        )?;
 
         let mut stream = me.store.insert(stream.id, stream);
 
@@ -1177,7 +1184,12 @@ impl<B> StreamRef<B> {
         let pushed = {
             let mut stream = me.store.resolve(self.opaque.key);
 
-            let frame = crate::server::Peer::convert_push_message(stream.id, promised_id, request)?;
+            let frame = crate::server::Peer::convert_push_message(
+                stream.id,
+                promised_id,
+                request,
+                Default::default(),
+            )?;
 
             actions
                 .send
