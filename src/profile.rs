@@ -1,4 +1,4 @@
-use crate::frame::PseudoType;
+use crate::frame::{PseudoType, StreamDependency, StreamId};
 
 /// This is the default user agent profile used by the library.
 /// It can be overridden by setting the `x-client-profile` header.
@@ -39,6 +39,17 @@ impl AgentProfile {
                 PseudoType::Authority,
                 PseudoType::Scheme,
             ],
+        }
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn to_stream_dependency(&self) -> StreamDependency {
+        match self {
+            AgentProfile::Chrome
+            | AgentProfile::Edge
+            | AgentProfile::OkHttp
+            | AgentProfile::Firefox => StreamDependency::new(StreamId::zero(), 255, true),
+            AgentProfile::Safari => StreamDependency::new(StreamId::zero(), 254, false),
         }
     }
 }

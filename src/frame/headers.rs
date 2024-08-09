@@ -129,7 +129,7 @@ impl Headers {
     pub fn new(stream_id: StreamId, pseudo: Pseudo, fields: HeaderMap) -> Self {
         Headers {
             stream_id,
-            stream_dep: None,
+            stream_dep: Some(pseudo.profile.to_stream_dependency()),
             header_block: HeaderBlock {
                 field_size: calculate_headermap_size(&fields),
                 fields,
@@ -292,7 +292,12 @@ impl Headers {
 
         self.header_block
             .into_encoding(encoder)
-            .encode(&head, dst, |_| {})
+            .encode(head, dst, |dst| {
+                if let Some(ref stream_dep) = self.stream_dep {
+                    // write 5 bytes for the stream dependency
+                    stream_dep.encode(dst);
+                }
+            })
     }
 
     fn head(&self) -> Head {
@@ -513,7 +518,7 @@ impl PushPromise {
 
         self.header_block
             .into_encoding(encoder)
-            .encode(&head, dst, |dst| {
+            .encode(head, dst, |dst| {
                 dst.put_u32(promised_id.into());
             })
     }
@@ -556,7 +561,7 @@ impl Continuation {
         // Get the CONTINUATION frame head
         let head = self.head();
 
-        self.header_block.encode(&head, dst, |_| {})
+        self.header_block.encode(head, dst, |_| {})
     }
 }
 
@@ -659,7 +664,7 @@ impl Pseudo {
 // ===== impl EncodingHeaderBlock =====
 
 impl EncodingHeaderBlock {
-    fn encode<F>(mut self, head: &Head, dst: &mut EncodeBuf<'_>, f: F) -> Option<Continuation>
+    fn encode<F>(mut self, head: Head, dst: &mut EncodeBuf<'_>, f: F) -> Option<Continuation>
     where
         F: FnOnce(&mut EncodeBuf<'_>),
     {
@@ -793,12 +798,16 @@ impl HeadersFlag {
     pub fn is_priority(&self) -> bool {
         self.0 & PRIORITY == PRIORITY
     }
+
+    pub fn set_priority(&mut self) {
+        self.0 |= PRIORITY;
+    }
 }
 
 impl Default for HeadersFlag {
     /// Returns a `HeadersFlag` value with `END_HEADERS` set.
     fn default() -> Self {
-        HeadersFlag(END_HEADERS)
+        HeadersFlag(END_STREAM | END_HEADERS | PRIORITY)
     }
 }
 
