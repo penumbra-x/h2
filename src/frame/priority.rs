@@ -35,15 +35,6 @@ impl Priority {
             dependency,
         })
     }
-
-    pub fn encode<B: BufMut>(&self, dst: &mut B) {
-        tracing::trace!("encoding PRIORITY; id={:?}", self.stream_id);
-        let head = Head::new(Kind::Priority, 0, self.stream_id);
-        head.encode(4, dst);
-        dst.put_u32(self.dependency.dependency_id.into());
-        dst.put_u8(self.dependency.weight);
-        dst.put_u8(if self.dependency.is_exclusive { 0x80 } else { 0 });
-    }
 }
 
 impl<B> From<Priority> for Frame<B> {
@@ -79,5 +70,16 @@ impl StreamDependency {
 
     pub fn dependency_id(&self) -> StreamId {
         self.dependency_id
+    }
+
+    pub fn encode<T: BufMut>(&self, dst: &mut T) {
+        let mut buf = [0; 4];
+        let dependency_id: u32 = self.dependency_id().into();
+        buf[0..4].copy_from_slice(&dependency_id.to_be_bytes());
+        if self.is_exclusive {
+            buf[0] |= 0x80;
+        }
+        dst.put_slice(&buf);
+        dst.put_u8(self.weight);
     }
 }

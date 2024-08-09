@@ -253,14 +253,6 @@ impl Headers {
         self.flags.set_end_stream()
     }
 
-    pub fn is_priority(&self) -> bool {
-        self.flags.is_priority()
-    }
-
-    pub fn set_priority(&mut self) {
-        self.flags.set_priority()
-    }
-
     pub fn is_over_size(&self) -> bool {
         self.header_block.is_over_size
     }
@@ -300,7 +292,12 @@ impl Headers {
 
         self.header_block
             .into_encoding(encoder)
-            .encode(&head, dst, |_| {})
+            .encode(head, dst, |dst| {
+                if let Some(ref stream_dep) = self.stream_dep {
+                    // write 5 bytes for the stream dependency
+                    stream_dep.encode(dst);
+                }
+            })
     }
 
     fn head(&self) -> Head {
@@ -521,7 +518,7 @@ impl PushPromise {
 
         self.header_block
             .into_encoding(encoder)
-            .encode(&head, dst, |dst| {
+            .encode(head, dst, |dst| {
                 dst.put_u32(promised_id.into());
             })
     }
@@ -564,7 +561,7 @@ impl Continuation {
         // Get the CONTINUATION frame head
         let head = self.head();
 
-        self.header_block.encode(&head, dst, |_| {})
+        self.header_block.encode(head, dst, |_| {})
     }
 }
 
@@ -667,7 +664,7 @@ impl Pseudo {
 // ===== impl EncodingHeaderBlock =====
 
 impl EncodingHeaderBlock {
-    fn encode<F>(mut self, head: &Head, dst: &mut EncodeBuf<'_>, f: F) -> Option<Continuation>
+    fn encode<F>(mut self, head: Head, dst: &mut EncodeBuf<'_>, f: F) -> Option<Continuation>
     where
         F: FnOnce(&mut EncodeBuf<'_>),
     {
@@ -810,7 +807,7 @@ impl HeadersFlag {
 impl Default for HeadersFlag {
     /// Returns a `HeadersFlag` value with `END_HEADERS` set.
     fn default() -> Self {
-        HeadersFlag(END_HEADERS)
+        HeadersFlag(END_STREAM | END_HEADERS | PRIORITY)
     }
 }
 
