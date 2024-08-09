@@ -129,7 +129,7 @@ impl Headers {
     pub fn new(stream_id: StreamId, pseudo: Pseudo, fields: HeaderMap) -> Self {
         Headers {
             stream_id,
-            stream_dep: None,
+            stream_dep: Some(StreamDependency::new(StreamId::zero(), 255, true)),
             header_block: HeaderBlock {
                 field_size: calculate_headermap_size(&fields),
                 fields,
@@ -251,6 +251,14 @@ impl Headers {
 
     pub fn set_end_stream(&mut self) {
         self.flags.set_end_stream()
+    }
+
+    pub fn is_priority(&self) -> bool {
+        self.flags.is_priority()
+    }
+
+    pub fn set_priority(&mut self) {
+        self.flags.set_priority()
     }
 
     pub fn is_over_size(&self) -> bool {
@@ -792,6 +800,10 @@ impl HeadersFlag {
 
     pub fn is_priority(&self) -> bool {
         self.0 & PRIORITY == PRIORITY
+    }
+
+    pub fn set_priority(&mut self) {
+        self.0 |= PRIORITY;
     }
 }
 

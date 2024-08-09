@@ -1,3 +1,5 @@
+use bytes::BufMut;
+
 use crate::frame::*;
 
 #[derive(Debug, Eq, PartialEq)]
@@ -32,6 +34,15 @@ impl Priority {
             stream_id: head.stream_id(),
             dependency,
         })
+    }
+
+    pub fn encode<B: BufMut>(&self, dst: &mut B) {
+        tracing::trace!("encoding PRIORITY; id={:?}", self.stream_id);
+        let head = Head::new(Kind::Priority, 0, self.stream_id);
+        head.encode(4, dst);
+        dst.put_u32(self.dependency.dependency_id.into());
+        dst.put_u8(self.dependency.weight);
+        dst.put_u8(if self.dependency.is_exclusive { 0x80 } else { 0 });
     }
 }
 
