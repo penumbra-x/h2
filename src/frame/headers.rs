@@ -129,7 +129,7 @@ impl Headers {
     pub fn new(stream_id: StreamId, pseudo: Pseudo, fields: HeaderMap) -> Self {
         Headers {
             stream_id,
-            stream_dep: Some(StreamDependency::new(StreamId::zero(), 255, true)),
+            stream_dep: Some(pseudo.profile.to_stream_dependency()),
             header_block: HeaderBlock {
                 field_size: calculate_headermap_size(&fields),
                 fields,
