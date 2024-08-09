@@ -798,16 +798,12 @@ impl HeadersFlag {
     pub fn is_priority(&self) -> bool {
         self.0 & PRIORITY == PRIORITY
     }
-
-    pub fn set_priority(&mut self) {
-        self.0 |= PRIORITY;
-    }
 }
 
 impl Default for HeadersFlag {
-    /// Returns a `HeadersFlag` value with `END_HEADERS` set.
+    /// Returns a `HeadersFlag` value with `END_HEADERS` and `PRIORITY` set.
     fn default() -> Self {
-        HeadersFlag(END_STREAM | END_HEADERS | PRIORITY)
+        HeadersFlag(END_HEADERS | PRIORITY)
     }
 }
 
