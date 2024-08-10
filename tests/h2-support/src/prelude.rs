@@ -1,5 +1,5 @@
 // Re-export H2 crate
-pub use h2_imp as h2;
+pub use h2_patch as h2;
 
 pub use h2::client;
 pub use h2::ext::Protocol;

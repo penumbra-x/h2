@@ -1,4 +1,4 @@
-use h2_imp as h2;
+use h2_patch as h2;
 
 use bytes::{BufMut, Bytes};
 use futures::ready;
