@@ -1,4 +1,4 @@
-use h2_patch as h2;
+use rh2 as h2;
 use std::convert::TryInto;
 use std::fmt;
 
