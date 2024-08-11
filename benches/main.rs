@@ -1,10 +1,10 @@
-use h2_patch as h2;
 use bytes::Bytes;
 use h2::{
     client,
     server::{self, SendResponse},
     RecvStream,
 };
+use h2_patch as h2;
 use http::Request;
 
 use std::{
