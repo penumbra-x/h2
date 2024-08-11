@@ -4,8 +4,8 @@ use h2::{
     server::{self, SendResponse},
     RecvStream,
 };
-use rh2 as h2;
 use http::Request;
+use rh2 as h2;
 
 use std::{
     error::Error,

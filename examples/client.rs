@@ -1,6 +1,6 @@
 use h2::client;
-use rh2 as h2;
 use http::{HeaderMap, Request};
+use rh2 as h2;
 
 use std::error::Error;
 

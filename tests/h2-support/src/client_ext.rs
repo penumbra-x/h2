@@ -1,7 +1,7 @@
 use bytes::Buf;
 use h2::client::{ResponseFuture, SendRequest};
-use rh2 as h2;
 use http::Request;
+use rh2 as h2;
 
 /// Extend the `h2::client::SendRequest` type with convenience methods.
 pub trait SendRequestExt {
