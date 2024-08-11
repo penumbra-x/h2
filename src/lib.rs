@@ -140,8 +140,6 @@ pub use crate::share::{FlowControl, Ping, PingPong, Pong, RecvStream, SendStream
 #[cfg(feature = "unstable")]
 pub use codec::{Codec, SendError, UserError};
 
-#[allow(missing_docs)]
-pub mod profile;
 use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};

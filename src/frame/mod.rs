@@ -1,5 +1,4 @@
 use crate::hpack;
-use crate::profile::AgentProfile;
 
 use bytes::Bytes;
 
@@ -52,7 +51,7 @@ mod window_update;
 pub use self::data::Data;
 pub use self::go_away::GoAway;
 pub use self::head::{Head, Kind};
-pub(crate) use self::headers::PseudoType;
+pub(crate) use self::headers::PseudoOrder;
 pub use self::headers::{
     parse_u64, Continuation, Headers, Pseudo, PushPromise, PushPromiseHeaderError,
 };
@@ -60,7 +59,7 @@ pub use self::ping::Ping;
 pub use self::priority::{Priority, StreamDependency};
 pub use self::reason::Reason;
 pub use self::reset::Reset;
-pub use self::settings::Settings;
+pub use self::settings::{Settings, SettingsOrder};
 pub use self::stream_id::{StreamId, StreamIdOverflow};
 pub use self::window_update::WindowUpdate;
 
@@ -84,7 +83,7 @@ pub enum Frame<T = Bytes> {
     Headers(Headers),
     Priority(Priority),
     PushPromise(PushPromise),
-    Settings(Settings, AgentProfile),
+    Settings(Settings),
     Ping(Ping),
     GoAway(GoAway),
     WindowUpdate(WindowUpdate),
@@ -103,7 +102,7 @@ impl<T> Frame<T> {
             Headers(frame) => frame.into(),
             Priority(frame) => frame.into(),
             PushPromise(frame) => frame.into(),
-            Settings(frame, _) => frame.into(),
+            Settings(frame) => frame.into(),
             Ping(frame) => frame.into(),
             GoAway(frame) => frame.into(),
             WindowUpdate(frame) => frame.into(),
@@ -121,7 +120,7 @@ impl<T> fmt::Debug for Frame<T> {
             Headers(ref frame) => fmt::Debug::fmt(frame, fmt),
             Priority(ref frame) => fmt::Debug::fmt(frame, fmt),
             PushPromise(ref frame) => fmt::Debug::fmt(frame, fmt),
-            Settings(ref frame, _) => fmt::Debug::fmt(frame, fmt),
+            Settings(ref frame) => fmt::Debug::fmt(frame, fmt),
             Ping(ref frame) => fmt::Debug::fmt(frame, fmt),
             GoAway(ref frame) => fmt::Debug::fmt(frame, fmt),
             WindowUpdate(ref frame) => fmt::Debug::fmt(frame, fmt),

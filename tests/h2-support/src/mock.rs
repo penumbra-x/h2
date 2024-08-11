@@ -188,7 +188,7 @@ impl Handle {
 
         let settings = match self.next().await {
             Some(frame) => match frame.unwrap() {
-                Frame::Settings(settings, _) => {
+                Frame::Settings(settings) => {
                     // Send the ACK
                     let ack = frame::Settings::ack();
 

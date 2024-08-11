@@ -1,10 +1,13 @@
 use std::fmt;
 
-use crate::{
-    frame::{util, Error, Frame, FrameSize, Head, Kind, StreamId},
-    profile::AgentProfile,
-};
+use crate::frame::{util, Error, Frame, FrameSize, Head, Kind, StreamId};
 use bytes::{BufMut, BytesMut};
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum SettingsOrder {
+    InitialWindowSize,
+    MaxConcurrentStreams,
+}
 
 #[derive(Clone, Default, Eq, PartialEq)]
 pub struct Settings {
@@ -17,6 +20,8 @@ pub struct Settings {
     max_frame_size: Option<u32>,
     max_header_list_size: Option<u32>,
     enable_connect_protocol: Option<u32>,
+    // Fields for the settings frame order
+    settings_order: Option<[SettingsOrder; 2]>,
 }
 
 /// An enum that lists all valid settings that can be sent in a SETTINGS
@@ -128,6 +133,10 @@ impl Settings {
         self.header_table_size = size;
     }
 
+    pub fn set_settings_order(&mut self, order: Option<[SettingsOrder; 2]>) {
+        self.settings_order = order;
+    }
+
     pub fn load(head: Head, payload: &[u8]) -> Result<Settings, Error> {
         use self::Setting::*;
 
@@ -209,11 +218,11 @@ impl Settings {
 
     fn payload_len(&self) -> usize {
         let mut len = 0;
-        self.for_each(|_| len += 6, AgentProfile::default());
+        self.for_each(|_| len += 6);
         len
     }
 
-    pub fn encode(&self, dst: &mut BytesMut, _profile: AgentProfile) {
+    pub fn encode(&self, dst: &mut BytesMut) {
         // Create & encode an appropriate frame head
         let head = Head::new(Kind::Settings, self.flags.into(), StreamId::zero());
         let payload_len = self.payload_len();
@@ -223,16 +232,13 @@ impl Settings {
         head.encode(payload_len, dst);
 
         // Encode the settings
-        self.for_each(
-            |setting| {
-                tracing::trace!("encoding setting; val={:?}", setting);
-                setting.encode(dst)
-            },
-            _profile,
-        );
+        self.for_each(|setting| {
+            tracing::trace!("encoding setting; val={:?}", setting);
+            setting.encode(dst)
+        });
     }
 
-    fn for_each<F: FnMut(Setting)>(&self, mut f: F, _profile: AgentProfile) {
+    fn for_each<F: FnMut(Setting)>(&self, mut f: F) {
         use self::Setting::*;
 
         if let Some(v) = self.header_table_size {
@@ -243,24 +249,28 @@ impl Settings {
             f(EnablePush(v));
         }
 
-        match _profile {
-            AgentProfile::Safari => {
-                if let Some(v) = self.initial_window_size {
-                    f(InitialWindowSize(v));
-                }
-
-                if let Some(v) = self.max_concurrent_streams {
-                    f(MaxConcurrentStreams(v));
+        if let Some(settings_frame_order) = self.settings_order {
+            for order in settings_frame_order {
+                match order {
+                    SettingsOrder::InitialWindowSize => {
+                        if let Some(v) = self.initial_window_size {
+                            f(InitialWindowSize(v));
+                        }
+                    }
+                    SettingsOrder::MaxConcurrentStreams => {
+                        if let Some(v) = self.max_concurrent_streams {
+                            f(MaxConcurrentStreams(v));
+                        }
+                    }
                 }
             }
-            AgentProfile::Chrome | AgentProfile::OkHttp | AgentProfile::Edge | _ => {
-                if let Some(v) = self.max_concurrent_streams {
-                    f(MaxConcurrentStreams(v));
-                }
+        } else {
+            if let Some(v) = self.initial_window_size {
+                f(InitialWindowSize(v));
+            }
 
-                if let Some(v) = self.initial_window_size {
-                    f(InitialWindowSize(v));
-                }
+            if let Some(v) = self.max_concurrent_streams {
+                f(MaxConcurrentStreams(v));
             }
         }
 
@@ -280,13 +290,7 @@ impl Settings {
 
 impl<T> From<Settings> for Frame<T> {
     fn from(src: Settings) -> Frame<T> {
-        Frame::Settings(src, AgentProfile::default())
-    }
-}
-
-impl<T> From<(Settings, AgentProfile)> for Frame<T> {
-    fn from(value: (Settings, AgentProfile)) -> Self {
-        Frame::Settings(value.0, value.1)
+        Frame::Settings(src)
     }
 }
 
@@ -295,32 +299,29 @@ impl fmt::Debug for Settings {
         let mut builder = f.debug_struct("Settings");
         builder.field("flags", &self.flags);
 
-        self.for_each(
-            |setting| match setting {
-                Setting::EnablePush(v) => {
-                    builder.field("enable_push", &v);
-                }
-                Setting::HeaderTableSize(v) => {
-                    builder.field("header_table_size", &v);
-                }
-                Setting::InitialWindowSize(v) => {
-                    builder.field("initial_window_size", &v);
-                }
-                Setting::MaxConcurrentStreams(v) => {
-                    builder.field("max_concurrent_streams", &v);
-                }
-                Setting::MaxFrameSize(v) => {
-                    builder.field("max_frame_size", &v);
-                }
-                Setting::MaxHeaderListSize(v) => {
-                    builder.field("max_header_list_size", &v);
-                }
-                Setting::EnableConnectProtocol(v) => {
-                    builder.field("enable_connect_protocol", &v);
-                }
-            },
-            AgentProfile::default(),
-        );
+        self.for_each(|setting| match setting {
+            Setting::EnablePush(v) => {
+                builder.field("enable_push", &v);
+            }
+            Setting::HeaderTableSize(v) => {
+                builder.field("header_table_size", &v);
+            }
+            Setting::InitialWindowSize(v) => {
+                builder.field("initial_window_size", &v);
+            }
+            Setting::MaxConcurrentStreams(v) => {
+                builder.field("max_concurrent_streams", &v);
+            }
+            Setting::MaxFrameSize(v) => {
+                builder.field("max_frame_size", &v);
+            }
+            Setting::MaxHeaderListSize(v) => {
+                builder.field("max_header_list_size", &v);
+            }
+            Setting::EnableConnectProtocol(v) => {
+                builder.field("enable_connect_protocol", &v);
+            }
+        });
 
         builder.finish()
     }
