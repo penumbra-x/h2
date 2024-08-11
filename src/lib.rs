@@ -78,6 +78,7 @@
 //! [`server::handshake`]: server/fn.handshake.html
 //! [`client::handshake`]: client/fn.handshake.html
 
+#![doc(html_root_url = "https://docs.rs/h2/0.3.23")]
 #![deny(
     missing_debug_implementations,
     missing_docs,
@@ -139,6 +140,8 @@ pub use crate::share::{FlowControl, Ping, PingPong, Pong, RecvStream, SendStream
 #[cfg(feature = "unstable")]
 pub use codec::{Codec, SendError, UserError};
 
+#[allow(missing_docs)]
+pub mod profile;
 use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};

@@ -1,3 +1,4 @@
+use h2_patch as h2;
 #[macro_export]
 macro_rules! assert_closed {
     ($transport:expr) => {{
@@ -41,7 +42,7 @@ macro_rules! assert_ping {
 macro_rules! assert_settings {
     ($frame:expr) => {{
         match $frame {
-            h2::frame::Frame::Settings(v) => v,
+            h2::frame::Frame::Settings(v, _) => v,
             f => panic!("expected SETTINGS; actual={:?}", f),
         }
     }};

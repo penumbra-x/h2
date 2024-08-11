@@ -1,6 +1,7 @@
 use futures::future;
 use futures::stream::FuturesUnordered;
 use futures::Stream;
+use h2_patch as h2;
 use http::{Method, Request};
 use std::future::Future;
 use std::io;

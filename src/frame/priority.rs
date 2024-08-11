@@ -1,3 +1,5 @@
+use bytes::BufMut;
+
 use crate::frame::*;
 
 #[derive(Debug, Eq, PartialEq)]
@@ -68,5 +70,16 @@ impl StreamDependency {
 
     pub fn dependency_id(&self) -> StreamId {
         self.dependency_id
+    }
+
+    pub fn encode<T: BufMut>(&self, dst: &mut T) {
+        let mut buf = [0; 4];
+        let dependency_id: u32 = self.dependency_id().into();
+        buf[0..4].copy_from_slice(&dependency_id.to_be_bytes());
+        if self.is_exclusive {
+            buf[0] |= 0x80;
+        }
+        dst.put_slice(&buf);
+        dst.put_u8(self.weight);
     }
 }

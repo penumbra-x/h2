@@ -1,3 +1,5 @@
+use h2_patch as h2;
+
 use bytes::{BufMut, Bytes};
 use futures::ready;
 use std::future::Future;

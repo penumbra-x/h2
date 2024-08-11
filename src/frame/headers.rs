@@ -2,6 +2,7 @@ use super::{util, StreamDependency, StreamId};
 use crate::ext::Protocol;
 use crate::frame::{Error, Frame, Head, Kind};
 use crate::hpack::{self, BytesStr};
+use crate::profile::AgentProfile;
 
 use http::header::{self, HeaderName, HeaderValue};
 use http::{uri, HeaderMap, Method, Request, StatusCode, Uri};
@@ -72,6 +73,17 @@ pub struct Pseudo {
 
     // Response
     pub status: Option<StatusCode>,
+
+    // Profile
+    pub profile: AgentProfile,
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub(crate) enum PseudoType {
+    Method,
+    Scheme,
+    Authority,
+    Path,
 }
 
 #[derive(Debug)]
@@ -117,7 +129,7 @@ impl Headers {
     pub fn new(stream_id: StreamId, pseudo: Pseudo, fields: HeaderMap) -> Self {
         Headers {
             stream_id,
-            stream_dep: None,
+            stream_dep: Some(pseudo.profile.to_stream_dependency()),
             header_block: HeaderBlock {
                 field_size: calculate_headermap_size(&fields),
                 fields,
@@ -280,7 +292,12 @@ impl Headers {
 
         self.header_block
             .into_encoding(encoder)
-            .encode(&head, dst, |_| {})
+            .encode(head, dst, |dst| {
+                if let Some(ref stream_dep) = self.stream_dep {
+                    // write 5 bytes for the stream dependency
+                    stream_dep.encode(dst);
+                }
+            })
     }
 
     fn head(&self) -> Head {
@@ -501,7 +518,7 @@ impl PushPromise {
 
         self.header_block
             .into_encoding(encoder)
-            .encode(&head, dst, |dst| {
+            .encode(head, dst, |dst| {
                 dst.put_u32(promised_id.into());
             })
     }
@@ -544,14 +561,19 @@ impl Continuation {
         // Get the CONTINUATION frame head
         let head = self.head();
 
-        self.header_block.encode(&head, dst, |_| {})
+        self.header_block.encode(head, dst, |_| {})
     }
 }
 
 // ===== impl Pseudo =====
 
 impl Pseudo {
-    pub fn request(method: Method, uri: Uri, protocol: Option<Protocol>) -> Self {
+    pub fn request(
+        method: Method,
+        uri: Uri,
+        protocol: Option<Protocol>,
+        profile: AgentProfile,
+    ) -> Self {
         let parts = uri::Parts::from(uri);
 
         let (scheme, path) = if method == Method::CONNECT && protocol.is_none() {
@@ -580,6 +602,7 @@ impl Pseudo {
             path,
             protocol,
             status: None,
+            profile,
         };
 
         // If the URI includes a scheme component, add it to the pseudo headers
@@ -604,6 +627,7 @@ impl Pseudo {
             path: None,
             protocol: None,
             status: Some(status),
+            profile: AgentProfile::default(),
         }
     }
 
@@ -640,7 +664,7 @@ impl Pseudo {
 // ===== impl EncodingHeaderBlock =====
 
 impl EncodingHeaderBlock {
-    fn encode<F>(mut self, head: &Head, dst: &mut EncodeBuf<'_>, f: F) -> Option<Continuation>
+    fn encode<F>(mut self, head: Head, dst: &mut EncodeBuf<'_>, f: F) -> Option<Continuation>
     where
         F: FnOnce(&mut EncodeBuf<'_>),
     {
@@ -698,20 +722,29 @@ impl Iterator for Iter {
         use crate::hpack::Header::*;
 
         if let Some(ref mut pseudo) = self.pseudo {
-            if let Some(method) = pseudo.method.take() {
-                return Some(Method(method));
-            }
-
-            if let Some(scheme) = pseudo.scheme.take() {
-                return Some(Scheme(scheme));
-            }
-
-            if let Some(authority) = pseudo.authority.take() {
-                return Some(Authority(authority));
-            }
-
-            if let Some(path) = pseudo.path.take() {
-                return Some(Path(path));
+            for pseudo_type in pseudo.profile.to_pseudo() {
+                match pseudo_type {
+                    PseudoType::Method => {
+                        if let Some(method) = pseudo.method.take() {
+                            return Some(Method(method));
+                        }
+                    }
+                    PseudoType::Scheme => {
+                        if let Some(scheme) = pseudo.scheme.take() {
+                            return Some(Scheme(scheme));
+                        }
+                    }
+                    PseudoType::Authority => {
+                        if let Some(authority) = pseudo.authority.take() {
+                            return Some(Authority(authority));
+                        }
+                    }
+                    PseudoType::Path => {
+                        if let Some(path) = pseudo.path.take() {
+                            return Some(Path(path));
+                        }
+                    }
+                }
             }
 
             if let Some(protocol) = pseudo.protocol.take() {
@@ -768,9 +801,9 @@ impl HeadersFlag {
 }
 
 impl Default for HeadersFlag {
-    /// Returns a `HeadersFlag` value with `END_HEADERS` set.
+    /// Returns a `HeadersFlag` value with `END_HEADERS` and `PRIORITY` set.
     fn default() -> Self {
-        HeadersFlag(END_HEADERS)
+        HeadersFlag(END_HEADERS | PRIORITY)
     }
 }
 
@@ -1062,9 +1095,11 @@ mod test {
             Pseudo::request(
                 Method::CONNECT,
                 Uri::from_static("https://example.com:8443"),
-                None
+                None,
+                Default::default(),
             ),
             Pseudo {
+                profile: AgentProfile::default(),
                 method: Method::CONNECT.into(),
                 authority: BytesStr::from_static("example.com:8443").into(),
                 ..Default::default()
@@ -1075,7 +1110,8 @@ mod test {
             Pseudo::request(
                 Method::CONNECT,
                 Uri::from_static("https://example.com/test"),
-                None
+                None,
+                Default::default(),
             ),
             Pseudo {
                 method: Method::CONNECT.into(),
@@ -1085,7 +1121,12 @@ mod test {
         );
 
         assert_eq!(
-            Pseudo::request(Method::CONNECT, Uri::from_static("example.com:8443"), None),
+            Pseudo::request(
+                Method::CONNECT,
+                Uri::from_static("example.com:8443"),
+                None,
+                Default::default(),
+            ),
             Pseudo {
                 method: Method::CONNECT.into(),
                 authority: BytesStr::from_static("example.com:8443").into(),
@@ -1105,7 +1146,8 @@ mod test {
             Pseudo::request(
                 Method::CONNECT,
                 Uri::from_static("https://example.com:8443"),
-                Protocol::from_static("the-bread-protocol").into()
+                Protocol::from_static("the-bread-protocol").into(),
+                Default::default(),
             ),
             Pseudo {
                 method: Method::CONNECT.into(),
@@ -1121,7 +1163,8 @@ mod test {
             Pseudo::request(
                 Method::CONNECT,
                 Uri::from_static("https://example.com:8443/test"),
-                Protocol::from_static("the-bread-protocol").into()
+                Protocol::from_static("the-bread-protocol").into(),
+                Default::default(),
             ),
             Pseudo {
                 method: Method::CONNECT.into(),
@@ -1137,7 +1180,8 @@ mod test {
             Pseudo::request(
                 Method::CONNECT,
                 Uri::from_static("http://example.com/a/b/c"),
-                Protocol::from_static("the-bread-protocol").into()
+                Protocol::from_static("the-bread-protocol").into(),
+                Default::default(),
             ),
             Pseudo {
                 method: Method::CONNECT.into(),
@@ -1156,7 +1200,12 @@ mod test {
         // these MUST include a ":path" pseudo-header field with a value of '*' (see Section 7.1 of [HTTP]).
         // See: https://datatracker.ietf.org/doc/html/rfc9113#section-8.3.1
         assert_eq!(
-            Pseudo::request(Method::OPTIONS, Uri::from_static("example.com:8080"), None,),
+            Pseudo::request(
+                Method::OPTIONS,
+                Uri::from_static("example.com:8080"),
+                None,
+                Default::default(),
+            ),
             Pseudo {
                 method: Method::OPTIONS.into(),
                 authority: BytesStr::from_static("example.com:8080").into(),
@@ -1184,6 +1233,7 @@ mod test {
                     method.clone(),
                     Uri::from_static("http://example.com:8080"),
                     None,
+                    Default::default(),
                 ),
                 Pseudo {
                     method: method.clone().into(),
@@ -1198,6 +1248,7 @@ mod test {
                     method.clone(),
                     Uri::from_static("https://example.com/a/b/c"),
                     None,
+                    Default::default(),
                 ),
                 Pseudo {
                     method: method.into(),

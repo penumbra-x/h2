@@ -138,6 +138,7 @@
 use crate::codec::{Codec, SendError, UserError};
 use crate::ext::Protocol;
 use crate::frame::{Headers, Pseudo, Reason, Settings, StreamId};
+use crate::profile::AgentProfile;
 use crate::proto::{self, Error};
 use crate::{FlowControl, PingPong, RecvStream, SendStream};
 
@@ -175,6 +176,7 @@ use tracing::Instrument;
 pub struct SendRequest<B: Buf> {
     inner: proto::Streams<B, Peer>,
     pending: Option<proto::OpaqueStreamRef>,
+    profile: AgentProfile,
 }
 
 /// Returns a `SendRequest` instance once it is ready to send at least one
@@ -343,6 +345,9 @@ pub struct Builder {
     ///
     /// When this gets exceeded, we issue GOAWAYs.
     local_max_error_reset_streams: Option<usize>,
+
+    /// Profile Settings
+    _profile: AgentProfile,
 }
 
 #[derive(Debug)]
@@ -515,7 +520,12 @@ where
         end_of_stream: bool,
     ) -> Result<(ResponseFuture, SendStream<B>), crate::Error> {
         self.inner
-            .send_request(request, end_of_stream, self.pending.as_ref())
+            .send_request(
+                request,
+                end_of_stream,
+                self.pending.as_ref(),
+                self.profile.clone(),
+            )
             .map_err(Into::into)
             .map(|(stream, is_full)| {
                 if stream.is_pending_open() && is_full {
@@ -576,6 +586,7 @@ where
         SendRequest {
             inner: self.inner.clone(),
             pending: None,
+            profile: self.profile.clone(),
         }
     }
 }
@@ -663,7 +674,14 @@ impl Builder {
             settings: Default::default(),
             stream_id: 1.into(),
             local_max_error_reset_streams: Some(proto::DEFAULT_LOCAL_RESET_COUNT_MAX),
+            _profile: AgentProfile::default(),
         }
+    }
+
+    /// Use the profile to configure the client.
+    pub fn profile(&mut self, profile: AgentProfile) -> &mut Self {
+        self._profile = profile;
+        self
     }
 
     /// Indicates the initial window size (in octets) for stream-level
@@ -1321,7 +1339,7 @@ where
 
         // Send initial settings frame
         codec
-            .buffer(builder.settings.clone().into())
+            .buffer((builder.settings.clone(), builder._profile.clone()).into())
             .expect("invalid SETTINGS frame");
 
         let inner = proto::Connection::new(
@@ -1340,6 +1358,7 @@ where
         let send_request = SendRequest {
             inner: inner.streams().clone(),
             pending: None,
+            profile: builder._profile,
         };
 
         let mut connection = Connection { inner };
@@ -1584,6 +1603,7 @@ impl Peer {
         request: Request<()>,
         protocol: Option<Protocol>,
         end_of_stream: bool,
+        profile: AgentProfile,
     ) -> Result<Headers, SendError> {
         use http::request::Parts;
 
@@ -1602,7 +1622,7 @@ impl Peer {
 
         // Build the set pseudo header set. All requests will include `method`
         // and `path`.
-        let mut pseudo = Pseudo::request(method, uri, protocol);
+        let mut pseudo = Pseudo::request(method, uri, protocol, profile);
 
         if pseudo.scheme.is_none() {
             // If the scheme is not set, then there are a two options.

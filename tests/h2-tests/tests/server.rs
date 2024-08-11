@@ -1255,6 +1255,7 @@ async fn extended_connect_protocol_disabled_by_default() {
                 Method::CONNECT,
                 uri::Uri::from_static("http://bread/baguette"),
                 Protocol::from_static("the-bread-protocol").into(),
+                Default::default(),
             )))
             .await;
 
@@ -1288,6 +1289,7 @@ async fn extended_connect_protocol_enabled_during_handshake() {
                 Method::CONNECT,
                 uri::Uri::from_static("http://bread/baguette"),
                 Protocol::from_static("the-bread-protocol").into(),
+                Default::default(),
             )))
             .await;
 
@@ -1335,6 +1337,7 @@ async fn reject_pseudo_protocol_on_non_connect_request() {
                 Method::GET,
                 uri::Uri::from_static("http://bread/baguette"),
                 Some(Protocol::from_static("the-bread-protocol")),
+                Default::default(),
             )))
             .await;
 
