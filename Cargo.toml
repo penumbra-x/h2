@@ -3,7 +3,7 @@ name = "h2-patch"
 # When releasing to crates.io:
 # - Update CHANGELOG.md.
 # - Create git tag
-version = "0.5.7"
+version = "0.4.5"
 license = "MIT"
 authors = ["0x676e67 <gngppz@gmail.com>"]
 description = "An HTTP/2 client and server"
