@@ -1,6 +1,6 @@
 # H2
 
-This project is forked from [hyper](https://github.com/hyperium/hyper)
+This project is forked from [h2](https://github.com/hyperium/h2)
 
 A Tokio aware, HTTP/2 client & server implementation for Rust.
 
