@@ -1,5 +1,5 @@
 [package]
-name = "h2-patch"
+name = "rh2"
 # When releasing to crates.io:
 # - Update CHANGELOG.md.
 # - Create git tag
@@ -8,8 +8,8 @@ license = "MIT"
 authors = ["0x676e67 <gngppz@gmail.com>"]
 description = "An HTTP/2 client and server"
 homepage = "https://github.com/crates-patch"
-documentation = "https://docs.rs/h2-patch"
-repository = "https://github.com/crates-patch/h2-patch"
+documentation = "https://docs.rs/rh2"
+repository = "https://github.com/crates-patch/rh2"
 readme = "README.md"
 keywords = ["http", "async", "non-blocking"]
 categories = ["asynchronous", "web-programming", "network-programming"]
