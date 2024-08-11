@@ -1,5 +1,7 @@
 # H2
 
+This project is forked from [hyper](https://github.com/hyperium/hyper)
+
 A Tokio aware, HTTP/2 client & server implementation for Rust.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)

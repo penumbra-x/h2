@@ -5,13 +5,11 @@ name = "h2-patch"
 # - Create git tag
 version = "0.5.7"
 license = "MIT"
-authors = [
-  "Carl Lerche <me@carllerche.com>",
-  "Sean McArthur <sean@seanmonstar.com>",
-]
+authors = ["0x676e67 <gngppz@gmail.com>"]
 description = "An HTTP/2 client and server"
-documentation = "https://docs.rs/h2"
-repository = "https://github.com/hyperium/h2"
+homepage = "https://github.com/crates-patch"
+documentation = "https://docs.rs/h2-patch"
+repository = "https://github.com/crates-patch/h2-patch"
 readme = "README.md"
 keywords = ["http", "async", "non-blocking"]
 categories = ["asynchronous", "web-programming", "network-programming"]
