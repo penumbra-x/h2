@@ -3,7 +3,7 @@ name = "rh2"
 # When releasing to crates.io:
 # - Update CHANGELOG.md.
 # - Create git tag
-version = "0.3.27"
+version = "0.3.29"
 license = "MIT"
 authors = ["0x676e67 <gngppz@gmail.com>"]
 description = "An HTTP/2 client and server"
