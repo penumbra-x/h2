@@ -132,7 +132,10 @@ impl Headers {
     ) -> Self {
         Headers {
             stream_id,
-            stream_dep,
+            stream_dep: stream_dep.map_or_else(
+                || Some(StreamDependency::new(StreamId::zero(), 255, true)),
+                Some,
+            ),
             header_block: HeaderBlock {
                 field_size: calculate_headermap_size(&fields),
                 fields,
