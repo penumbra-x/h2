@@ -130,6 +130,13 @@ impl Headers {
         fields: HeaderMap,
         stream_dep: Option<StreamDependency>,
     ) -> Self {
+        // If the stream dependency is set, the PRIORITY flag must be set
+        let flags = if stream_dep.is_some() {
+            HeadersFlag(END_HEADERS | PRIORITY)
+        } else {
+            HeadersFlag::default()
+        };
+
         Headers {
             stream_id,
             stream_dep,
@@ -139,7 +146,7 @@ impl Headers {
                 is_over_size: false,
                 pseudo,
             },
-            flags: HeadersFlag::default(),
+            flags,
         }
     }
 
@@ -822,9 +829,9 @@ impl HeadersFlag {
 }
 
 impl Default for HeadersFlag {
-    /// Returns a `HeadersFlag` value with `END_HEADERS` and `PRIORITY` set.
+    /// Returns a `HeadersFlag` value with `END_HEADERS` set.
     fn default() -> Self {
-        HeadersFlag(END_HEADERS | PRIORITY)
+        HeadersFlag(END_HEADERS)
     }
 }
 
