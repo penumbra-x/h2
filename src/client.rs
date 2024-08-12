@@ -677,20 +677,20 @@ impl Builder {
     }
 
     /// Set http2 header pseudo order
-    pub fn headers_psuedo(&mut self, headers_psuedo: Option<[PseudoOrder; 4]>) -> &mut Self {
-        self.headers_pseudo_order = headers_psuedo;
+    pub fn headers_psuedo(&mut self, headers_psuedo: [PseudoOrder; 4]) -> &mut Self {
+        self.headers_pseudo_order = Some(headers_psuedo);
         self
     }
 
     /// Set http2 header priority
-    pub fn headers_priority(&mut self, headers_priority: Option<StreamDependency>) -> &mut Self {
-        self.headers_priority = headers_priority;
+    pub fn headers_priority(&mut self, headers_priority: StreamDependency) -> &mut Self {
+        self.headers_priority = Some(headers_priority);
         self
     }
 
     /// Settings frame order
-    pub fn settings_order(&mut self, order: Option<[SettingsOrder; 2]>) -> &mut Self {
-        self.settings.set_settings_order(order);
+    pub fn settings_order(&mut self, order: [SettingsOrder; 2]) -> &mut Self {
+        self.settings.set_settings_order(Some(order));
         self
     }
 
