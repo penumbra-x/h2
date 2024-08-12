@@ -6,6 +6,7 @@ use crate::frame::DEFAULT_INITIAL_WINDOW_SIZE;
 use crate::proto::*;
 
 use bytes::Bytes;
+use frame::{PseudoOrder, StreamDependency};
 use futures_core::Stream;
 use std::io;
 use std::marker::PhantomData;
@@ -83,6 +84,8 @@ pub(crate) struct Config {
     pub remote_reset_stream_max: usize,
     pub local_error_reset_streams_max: Option<usize>,
     pub settings: frame::Settings,
+    pub headers_pseudo_order: Option<[PseudoOrder; 4]>,
+    pub headers_priority: Option<StreamDependency>,
 }
 
 #[derive(Debug)]
@@ -125,7 +128,11 @@ where
                 local_max_error_reset_streams: config.local_error_reset_streams_max,
             }
         }
-        let streams = Streams::new(streams_config(&config));
+        let streams = Streams::new(
+            streams_config(&config),
+            config.headers_priority,
+            config.headers_pseudo_order,
+        );
         Connection {
             codec,
             inner: ConnectionInner {
@@ -510,7 +517,7 @@ where
                 tracing::trace!(?frame, "recv PUSH_PROMISE");
                 self.streams.recv_push_promise(frame)?;
             }
-            Some(Settings(frame, _)) => {
+            Some(Settings(frame)) => {
                 tracing::trace!(?frame, "recv SETTINGS");
                 return Ok(ReceivedFrame::Settings(frame));
             }

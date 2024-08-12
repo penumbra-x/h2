@@ -42,7 +42,7 @@ macro_rules! assert_ping {
 macro_rules! assert_settings {
     ($frame:expr) => {{
         match $frame {
-            h2::frame::Frame::Settings(v, _) => v,
+            h2::frame::Frame::Settings(v) => v,
             f => panic!("expected SETTINGS; actual={:?}", f),
         }
     }};

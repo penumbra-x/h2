@@ -8,7 +8,7 @@ pub struct Priority {
     dependency: StreamDependency,
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct StreamDependency {
     /// The ID of the stream dependency target
     dependency_id: StreamId,

@@ -2,12 +2,10 @@ use super::{util, StreamDependency, StreamId};
 use crate::ext::Protocol;
 use crate::frame::{Error, Frame, Head, Kind};
 use crate::hpack::{self, BytesStr};
-use crate::profile::AgentProfile;
-
-use http::header::{self, HeaderName, HeaderValue};
-use http::{uri, HeaderMap, Method, Request, StatusCode, Uri};
 
 use bytes::{BufMut, Bytes, BytesMut};
+use http::header::{self, HeaderName, HeaderValue};
+use http::{uri, HeaderMap, Method, Request, StatusCode, Uri};
 
 use std::fmt;
 use std::io::Cursor;
@@ -74,12 +72,12 @@ pub struct Pseudo {
     // Response
     pub status: Option<StatusCode>,
 
-    // Profile
-    pub profile: AgentProfile,
+    // order of pseudo headers
+    pub order: Option<[PseudoOrder; 4]>,
 }
 
-#[derive(Debug, Eq, PartialEq)]
-pub(crate) enum PseudoType {
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum PseudoOrder {
     Method,
     Scheme,
     Authority,
@@ -126,10 +124,15 @@ const ALL: u8 = END_STREAM | END_HEADERS | PADDED | PRIORITY;
 
 impl Headers {
     /// Create a new HEADERS frame
-    pub fn new(stream_id: StreamId, pseudo: Pseudo, fields: HeaderMap) -> Self {
+    pub fn new(
+        stream_id: StreamId,
+        pseudo: Pseudo,
+        fields: HeaderMap,
+        stream_dep: Option<StreamDependency>,
+    ) -> Self {
         Headers {
             stream_id,
-            stream_dep: Some(pseudo.profile.to_stream_dependency()),
+            stream_dep,
             header_block: HeaderBlock {
                 field_size: calculate_headermap_size(&fields),
                 fields,
@@ -572,7 +575,7 @@ impl Pseudo {
         method: Method,
         uri: Uri,
         protocol: Option<Protocol>,
-        profile: AgentProfile,
+        pseudo_order: Option<[PseudoOrder; 4]>,
     ) -> Self {
         let parts = uri::Parts::from(uri);
 
@@ -602,7 +605,7 @@ impl Pseudo {
             path,
             protocol,
             status: None,
-            profile,
+            order: pseudo_order,
         };
 
         // If the URI includes a scheme component, add it to the pseudo headers
@@ -627,7 +630,7 @@ impl Pseudo {
             path: None,
             protocol: None,
             status: Some(status),
-            profile: AgentProfile::default(),
+            order: None,
         }
     }
 
@@ -722,28 +725,46 @@ impl Iterator for Iter {
         use crate::hpack::Header::*;
 
         if let Some(ref mut pseudo) = self.pseudo {
-            for pseudo_type in pseudo.profile.to_pseudo() {
-                match pseudo_type {
-                    PseudoType::Method => {
-                        if let Some(method) = pseudo.method.take() {
-                            return Some(Method(method));
+            if let Some(orders) = pseudo.order.as_ref() {
+                for pseudo_type in orders {
+                    match pseudo_type {
+                        PseudoOrder::Method => {
+                            if let Some(method) = pseudo.method.take() {
+                                return Some(Method(method));
+                            }
+                        }
+                        PseudoOrder::Scheme => {
+                            if let Some(scheme) = pseudo.scheme.take() {
+                                return Some(Scheme(scheme));
+                            }
+                        }
+                        PseudoOrder::Authority => {
+                            if let Some(authority) = pseudo.authority.take() {
+                                return Some(Authority(authority));
+                            }
+                        }
+                        PseudoOrder::Path => {
+                            if let Some(path) = pseudo.path.take() {
+                                return Some(Path(path));
+                            }
                         }
                     }
-                    PseudoType::Scheme => {
-                        if let Some(scheme) = pseudo.scheme.take() {
-                            return Some(Scheme(scheme));
-                        }
-                    }
-                    PseudoType::Authority => {
-                        if let Some(authority) = pseudo.authority.take() {
-                            return Some(Authority(authority));
-                        }
-                    }
-                    PseudoType::Path => {
-                        if let Some(path) = pseudo.path.take() {
-                            return Some(Path(path));
-                        }
-                    }
+                }
+            } else {
+                if let Some(method) = pseudo.method.take() {
+                    return Some(Method(method));
+                }
+
+                if let Some(scheme) = pseudo.scheme.take() {
+                    return Some(Scheme(scheme));
+                }
+
+                if let Some(authority) = pseudo.authority.take() {
+                    return Some(Authority(authority));
+                }
+
+                if let Some(path) = pseudo.path.take() {
+                    return Some(Path(path));
                 }
             }
 
@@ -1048,6 +1069,7 @@ mod test {
                     HeaderValue::from_static("sup"),
                 ),
             ]),
+            None,
         );
 
         let continuation = headers
@@ -1099,7 +1121,6 @@ mod test {
                 Default::default(),
             ),
             Pseudo {
-                profile: AgentProfile::default(),
                 method: Method::CONNECT.into(),
                 authority: BytesStr::from_static("example.com:8443").into(),
                 ..Default::default()

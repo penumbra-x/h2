@@ -1686,7 +1686,7 @@ async fn receive_settings_frame_twice_with_second_one_empty() {
         srv.read_preface().await.unwrap();
         match srv.next().await {
             Some(frame) => match frame.unwrap() {
-                h2::frame::Frame::Settings(_, _) => {
+                h2::frame::Frame::Settings(_) => {
                     let ack = frame::Settings::ack();
                     srv.send(ack.into()).await.unwrap();
                 }
@@ -1736,7 +1736,7 @@ async fn receive_settings_frame_twice_with_second_one_non_empty() {
         srv.read_preface().await.unwrap();
         match srv.next().await {
             Some(frame) => match frame.unwrap() {
-                h2::frame::Frame::Settings(_, _) => {
+                h2::frame::Frame::Settings(_) => {
                     let ack = frame::Settings::ack();
                     srv.send(ack.into()).await.unwrap();
                 }

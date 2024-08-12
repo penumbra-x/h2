@@ -137,8 +137,9 @@
 
 use crate::codec::{Codec, SendError, UserError};
 use crate::ext::Protocol;
-use crate::frame::{Headers, Pseudo, Reason, Settings, StreamId};
-use crate::profile::AgentProfile;
+use crate::frame::{
+    Headers, Pseudo, PseudoOrder, Reason, Settings, SettingsOrder, StreamDependency, StreamId,
+};
 use crate::proto::{self, Error};
 use crate::{FlowControl, PingPong, RecvStream, SendStream};
 
@@ -176,7 +177,6 @@ use tracing::Instrument;
 pub struct SendRequest<B: Buf> {
     inner: proto::Streams<B, Peer>,
     pending: Option<proto::OpaqueStreamRef>,
-    profile: AgentProfile,
 }
 
 /// Returns a `SendRequest` instance once it is ready to send at least one
@@ -346,8 +346,11 @@ pub struct Builder {
     /// When this gets exceeded, we issue GOAWAYs.
     local_max_error_reset_streams: Option<usize>,
 
-    /// Profile Settings
-    _profile: AgentProfile,
+    /// The headers frame pseudo order
+    headers_pseudo_order: Option<[PseudoOrder; 4]>,
+
+    /// The headers frame priority
+    headers_priority: Option<StreamDependency>,
 }
 
 #[derive(Debug)]
@@ -520,12 +523,7 @@ where
         end_of_stream: bool,
     ) -> Result<(ResponseFuture, SendStream<B>), crate::Error> {
         self.inner
-            .send_request(
-                request,
-                end_of_stream,
-                self.pending.as_ref(),
-                self.profile.clone(),
-            )
+            .send_request(request, end_of_stream, self.pending.as_ref())
             .map_err(Into::into)
             .map(|(stream, is_full)| {
                 if stream.is_pending_open() && is_full {
@@ -586,7 +584,6 @@ where
         SendRequest {
             inner: self.inner.clone(),
             pending: None,
-            profile: self.profile.clone(),
         }
     }
 }
@@ -674,13 +671,26 @@ impl Builder {
             settings: Default::default(),
             stream_id: 1.into(),
             local_max_error_reset_streams: Some(proto::DEFAULT_LOCAL_RESET_COUNT_MAX),
-            _profile: AgentProfile::default(),
+            headers_pseudo_order: None,
+            headers_priority: None,
         }
     }
 
-    /// Use the profile to configure the client.
-    pub fn profile(&mut self, profile: AgentProfile) -> &mut Self {
-        self._profile = profile;
+    /// Set http2 header pseudo order
+    pub fn headers_psuedo(&mut self, headers_psuedo: Option<[PseudoOrder; 4]>) -> &mut Self {
+        self.headers_pseudo_order = headers_psuedo;
+        self
+    }
+
+    /// Set http2 header priority
+    pub fn headers_priority(&mut self, headers_priority: Option<StreamDependency>) -> &mut Self {
+        self.headers_priority = headers_priority;
+        self
+    }
+
+    /// Settings frame order
+    pub fn settings_order(&mut self, order: Option<[SettingsOrder; 2]>) -> &mut Self {
+        self.settings.set_settings_order(order);
         self
     }
 
@@ -1339,7 +1349,7 @@ where
 
         // Send initial settings frame
         codec
-            .buffer((builder.settings.clone(), builder._profile.clone()).into())
+            .buffer((builder.settings.clone()).into())
             .expect("invalid SETTINGS frame");
 
         let inner = proto::Connection::new(
@@ -1353,12 +1363,13 @@ where
                 remote_reset_stream_max: builder.pending_accept_reset_stream_max,
                 local_error_reset_streams_max: builder.local_max_error_reset_streams,
                 settings: builder.settings.clone(),
+                headers_pseudo_order: builder.headers_pseudo_order,
+                headers_priority: builder.headers_priority,
             },
         );
         let send_request = SendRequest {
             inner: inner.streams().clone(),
             pending: None,
-            profile: builder._profile,
         };
 
         let mut connection = Connection { inner };
@@ -1603,7 +1614,8 @@ impl Peer {
         request: Request<()>,
         protocol: Option<Protocol>,
         end_of_stream: bool,
-        profile: AgentProfile,
+        pseudo_order: Option<[PseudoOrder; 4]>,
+        headers_priority: Option<StreamDependency>,
     ) -> Result<Headers, SendError> {
         use http::request::Parts;
 
@@ -1622,7 +1634,7 @@ impl Peer {
 
         // Build the set pseudo header set. All requests will include `method`
         // and `path`.
-        let mut pseudo = Pseudo::request(method, uri, protocol, profile);
+        let mut pseudo = Pseudo::request(method, uri, protocol, pseudo_order);
 
         if pseudo.scheme.is_none() {
             // If the scheme is not set, then there are a two options.
@@ -1653,7 +1665,7 @@ impl Peer {
         }
 
         // Create the HEADERS frame
-        let mut frame = Headers::new(id, pseudo, headers);
+        let mut frame = Headers::new(id, pseudo, headers, headers_priority);
 
         if end_of_stream {
             frame.set_end_stream()

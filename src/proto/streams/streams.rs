@@ -1,10 +1,10 @@
+use super::frame::{PseudoOrder, StreamDependency};
 use super::recv::RecvHeaderBlockError;
 use super::store::{self, Entry, Resolve, Store};
 use super::{Buffer, Config, Counts, Prioritized, Recv, Send, Stream, StreamId};
 use crate::codec::{Codec, SendError, UserError};
 use crate::ext::Protocol;
 use crate::frame::{self, Frame, Reason};
-use crate::profile::AgentProfile;
 use crate::proto::{peer, Error, Initiator, Open, Peer, WindowSize};
 use crate::{client, proto, server};
 
@@ -34,6 +34,12 @@ where
     /// bit of unsafe code. This optimization has been postponed until it has
     /// been shown to be necessary.
     send_buffer: Arc<SendBuffer<B>>,
+
+    /// Headers frame pseudo order
+    headers_pseudo_order: Option<[PseudoOrder; 4]>,
+
+    /// Headers frame priority
+    headers_priority: Option<StreamDependency>,
 
     _p: ::std::marker::PhantomData<P>,
 }
@@ -109,12 +115,19 @@ where
     B: Buf,
     P: Peer,
 {
-    pub fn new(config: Config) -> Self {
+    pub fn new(
+        config: Config,
+        headers_priority: Option<StreamDependency>,
+        headers_pseudo_order: Option<[PseudoOrder; 4]>,
+    ) -> Self {
         let peer = P::r#dyn();
 
         Streams {
             inner: Inner::new(peer, config),
             send_buffer: Arc::new(SendBuffer::new()),
+            headers_pseudo_order,
+            headers_priority,
+
             _p: ::std::marker::PhantomData,
         }
     }
@@ -221,7 +234,6 @@ where
         mut request: Request<()>,
         end_of_stream: bool,
         pending: Option<&OpaqueStreamRef>,
-        profile: AgentProfile,
     ) -> Result<(StreamRef<B>, bool), SendError> {
         use super::stream::ContentLength;
         use http::Method;
@@ -280,7 +292,8 @@ where
             request,
             protocol,
             end_of_stream,
-            profile,
+            self.headers_pseudo_order,
+            self.headers_priority,
         )?;
 
         let mut stream = me.store.insert(stream.id, stream);
@@ -992,6 +1005,7 @@ where
             inner,
             send_buffer,
             _p,
+            ..
         } = self;
         DynStreams {
             inner,
@@ -1048,6 +1062,8 @@ where
         Streams {
             inner: self.inner.clone(),
             send_buffer: self.send_buffer.clone(),
+            headers_priority: self.headers_priority.clone(),
+            headers_pseudo_order: self.headers_pseudo_order.clone(),
             _p: ::std::marker::PhantomData,
         }
     }
@@ -1184,12 +1200,7 @@ impl<B> StreamRef<B> {
         let pushed = {
             let mut stream = me.store.resolve(self.opaque.key);
 
-            let frame = crate::server::Peer::convert_push_message(
-                stream.id,
-                promised_id,
-                request,
-                Default::default(),
-            )?;
+            let frame = crate::server::Peer::convert_push_message(stream.id, promised_id, request)?;
 
             actions
                 .send

@@ -257,8 +257,8 @@ where
                     self.next = Some(Next::Continuation(continuation));
                 }
             }
-            Frame::Settings(v, _profile) => {
-                v.encode(self.buf.get_mut(), _profile);
+            Frame::Settings(v) => {
+                v.encode(self.buf.get_mut());
                 tracing::trace!(rem = self.buf.remaining(), "encoded settings");
             }
             Frame::GoAway(v) => {
