@@ -39,7 +39,7 @@ pub struct Settings {
     max_header_list_size: Option<u32>,
     enable_connect_protocol: Option<u32>,
     // Fields for the settings frame order
-    settings_orders: Option<SettingsOrders>,
+    settings_orders: SettingsOrders,
 }
 
 /// An enum that lists all valid settings that can be sent in a SETTINGS
@@ -152,7 +152,7 @@ impl Settings {
     }
 
     pub fn set_settings_order(&mut self, order: Option<[SettingsOrder; 2]>) {
-        self.settings_orders = order.map(|order| order.into());
+        self.settings_orders = order.map_or(SettingsOrders::default(), SettingsOrders::from);
     }
 
     pub fn load(head: Head, payload: &[u8]) -> Result<Settings, Error> {
@@ -267,7 +267,7 @@ impl Settings {
             f(EnablePush(v));
         }
 
-        for order in self.settings_orders.unwrap_or_default().0.iter() {
+        for order in self.settings_orders.0.iter() {
             match order {
                 SettingsOrder::InitialWindowSize => {
                     if let Some(v) = self.initial_window_size {
