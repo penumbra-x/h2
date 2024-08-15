@@ -54,4 +54,4 @@ jobs:
           cargo update
           cargo update --package tokio --precise 1.38.1
 
-      - run: cargo check -p h2
+      - run: cargo check -p rh2
