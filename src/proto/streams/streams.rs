@@ -1,4 +1,4 @@
-use super::frame::{PseudoOrder, StreamDependency};
+use super::frame::{PseudoOrderList, StreamDependency};
 use super::recv::RecvHeaderBlockError;
 use super::store::{self, Entry, Resolve, Store};
 use super::{Buffer, Config, Counts, Prioritized, Recv, Send, Stream, StreamId};
@@ -36,7 +36,7 @@ where
     send_buffer: Arc<SendBuffer<B>>,
 
     /// Headers frame pseudo order
-    headers_pseudo_order: Option<[PseudoOrder; 4]>,
+    headers_pseudo_order: Option<PseudoOrderList>,
 
     /// Headers frame priority
     headers_priority: Option<StreamDependency>,
@@ -118,7 +118,7 @@ where
     pub fn new(
         config: Config,
         headers_priority: Option<StreamDependency>,
-        headers_pseudo_order: Option<[PseudoOrder; 4]>,
+        headers_pseudo_order: Option<PseudoOrderList>,
     ) -> Self {
         let peer = P::r#dyn();
 
