@@ -73,7 +73,7 @@ pub struct Pseudo {
     pub status: Option<StatusCode>,
 
     // order of pseudo headers
-    pub order: Option<[PseudoOrder; 4]>,
+    pub order: PseudoOrders,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -82,6 +82,26 @@ pub enum PseudoOrder {
     Scheme,
     Authority,
     Path,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PseudoOrders([PseudoOrder; 4]);
+
+impl From<[PseudoOrder; 4]> for PseudoOrders {
+    fn from(src: [PseudoOrder; 4]) -> Self {
+        PseudoOrders(src)
+    }
+}
+
+impl Default for PseudoOrders {
+    fn default() -> Self {
+        PseudoOrders([
+            PseudoOrder::Method,
+            PseudoOrder::Scheme,
+            PseudoOrder::Authority,
+            PseudoOrder::Path,
+        ])
+    }
 }
 
 #[derive(Debug)]
@@ -582,7 +602,7 @@ impl Pseudo {
         method: Method,
         uri: Uri,
         protocol: Option<Protocol>,
-        pseudo_order: Option<[PseudoOrder; 4]>,
+        order: Option<PseudoOrders>,
     ) -> Self {
         let parts = uri::Parts::from(uri);
 
@@ -612,7 +632,7 @@ impl Pseudo {
             path,
             protocol,
             status: None,
-            order: pseudo_order,
+            order: order.unwrap_or_default(),
         };
 
         // If the URI includes a scheme component, add it to the pseudo headers
@@ -637,7 +657,7 @@ impl Pseudo {
             path: None,
             protocol: None,
             status: Some(status),
-            order: None,
+            order: Default::default(),
         }
     }
 
@@ -732,46 +752,28 @@ impl Iterator for Iter {
         use crate::hpack::Header::*;
 
         if let Some(ref mut pseudo) = self.pseudo {
-            if let Some(orders) = pseudo.order.as_ref() {
-                for pseudo_type in orders {
-                    match pseudo_type {
-                        PseudoOrder::Method => {
-                            if let Some(method) = pseudo.method.take() {
-                                return Some(Method(method));
-                            }
-                        }
-                        PseudoOrder::Scheme => {
-                            if let Some(scheme) = pseudo.scheme.take() {
-                                return Some(Scheme(scheme));
-                            }
-                        }
-                        PseudoOrder::Authority => {
-                            if let Some(authority) = pseudo.authority.take() {
-                                return Some(Authority(authority));
-                            }
-                        }
-                        PseudoOrder::Path => {
-                            if let Some(path) = pseudo.path.take() {
-                                return Some(Path(path));
-                            }
+            for pseudo_type in pseudo.order.0.iter() {
+                match pseudo_type {
+                    PseudoOrder::Method => {
+                        if let Some(method) = pseudo.method.take() {
+                            return Some(Method(method));
                         }
                     }
-                }
-            } else {
-                if let Some(method) = pseudo.method.take() {
-                    return Some(Method(method));
-                }
-
-                if let Some(scheme) = pseudo.scheme.take() {
-                    return Some(Scheme(scheme));
-                }
-
-                if let Some(authority) = pseudo.authority.take() {
-                    return Some(Authority(authority));
-                }
-
-                if let Some(path) = pseudo.path.take() {
-                    return Some(Path(path));
+                    PseudoOrder::Scheme => {
+                        if let Some(scheme) = pseudo.scheme.take() {
+                            return Some(Scheme(scheme));
+                        }
+                    }
+                    PseudoOrder::Authority => {
+                        if let Some(authority) = pseudo.authority.take() {
+                            return Some(Authority(authority));
+                        }
+                    }
+                    PseudoOrder::Path => {
+                        if let Some(path) = pseudo.path.take() {
+                            return Some(Path(path));
+                        }
+                    }
                 }
             }
 
