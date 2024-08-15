@@ -52,7 +52,7 @@ pub use self::data::Data;
 pub use self::go_away::GoAway;
 pub use self::head::{Head, Kind};
 pub use self::headers::{
-    parse_u64, Continuation, Headers, Pseudo, PseudoOrder, PseudoOrderList, PushPromise,
+    parse_u64, Continuation, Headers, Pseudo, PseudoOrder, PseudoOrders, PushPromise,
     PushPromiseHeaderError,
 };
 pub use self::ping::Ping;

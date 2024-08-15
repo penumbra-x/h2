@@ -1,4 +1,4 @@
-use super::frame::{PseudoOrderList, StreamDependency};
+use super::frame::{PseudoOrders, StreamDependency};
 use super::recv::RecvHeaderBlockError;
 use super::store::{self, Entry, Resolve, Store};
 use super::{Buffer, Config, Counts, Prioritized, Recv, Send, Stream, StreamId};
@@ -36,7 +36,7 @@ where
     send_buffer: Arc<SendBuffer<B>>,
 
     /// Headers frame pseudo order
-    headers_pseudo_order: Option<PseudoOrderList>,
+    headers_pseudo_order: Option<PseudoOrders>,
 
     /// Headers frame priority
     headers_priority: Option<StreamDependency>,
@@ -118,7 +118,7 @@ where
     pub fn new(
         config: Config,
         headers_priority: Option<StreamDependency>,
-        headers_pseudo_order: Option<PseudoOrderList>,
+        headers_pseudo_order: Option<PseudoOrders>,
     ) -> Self {
         let peer = P::r#dyn();
 
@@ -1062,8 +1062,8 @@ where
         Streams {
             inner: self.inner.clone(),
             send_buffer: self.send_buffer.clone(),
-            headers_priority: self.headers_priority.clone(),
-            headers_pseudo_order: self.headers_pseudo_order.clone(),
+            headers_priority: self.headers_priority,
+            headers_pseudo_order: self.headers_pseudo_order,
             _p: ::std::marker::PhantomData,
         }
     }

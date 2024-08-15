@@ -73,7 +73,7 @@ pub struct Pseudo {
     pub status: Option<StatusCode>,
 
     // order of pseudo headers
-    pub order: PseudoOrderList,
+    pub order: PseudoOrders,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -85,17 +85,17 @@ pub enum PseudoOrder {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct PseudoOrderList([PseudoOrder; 4]);
+pub struct PseudoOrders([PseudoOrder; 4]);
 
-impl From<[PseudoOrder; 4]> for PseudoOrderList {
+impl From<[PseudoOrder; 4]> for PseudoOrders {
     fn from(src: [PseudoOrder; 4]) -> Self {
-        PseudoOrderList(src)
+        PseudoOrders(src)
     }
 }
 
-impl Default for PseudoOrderList {
+impl Default for PseudoOrders {
     fn default() -> Self {
-        PseudoOrderList([
+        PseudoOrders([
             PseudoOrder::Method,
             PseudoOrder::Scheme,
             PseudoOrder::Authority,
@@ -602,7 +602,7 @@ impl Pseudo {
         method: Method,
         uri: Uri,
         protocol: Option<Protocol>,
-        order: Option<PseudoOrderList>,
+        order: Option<PseudoOrders>,
     ) -> Self {
         let parts = uri::Parts::from(uri);
 

@@ -6,7 +6,7 @@ use crate::frame::DEFAULT_INITIAL_WINDOW_SIZE;
 use crate::proto::*;
 
 use bytes::Bytes;
-use frame::{PseudoOrderList, StreamDependency};
+use frame::{PseudoOrders, StreamDependency};
 use futures_core::Stream;
 use std::io;
 use std::marker::PhantomData;
@@ -84,7 +84,7 @@ pub(crate) struct Config {
     pub remote_reset_stream_max: usize,
     pub local_error_reset_streams_max: Option<usize>,
     pub settings: frame::Settings,
-    pub headers_pseudo_order: Option<PseudoOrderList>,
+    pub headers_pseudo_order: Option<PseudoOrders>,
     pub headers_priority: Option<StreamDependency>,
 }
 
