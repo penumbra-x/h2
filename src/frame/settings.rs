@@ -9,6 +9,24 @@ pub enum SettingsOrder {
     MaxConcurrentStreams,
 }
 
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct SettingsOrders([SettingsOrder; 2]);
+
+impl From<[SettingsOrder; 2]> for SettingsOrders {
+    fn from(order: [SettingsOrder; 2]) -> Self {
+        SettingsOrders(order)
+    }
+}
+
+impl Default for SettingsOrders {
+    fn default() -> Self {
+        SettingsOrders([
+            SettingsOrder::InitialWindowSize,
+            SettingsOrder::MaxConcurrentStreams,
+        ])
+    }
+}
+
 #[derive(Clone, Default, Eq, PartialEq)]
 pub struct Settings {
     flags: SettingsFlags,
@@ -21,7 +39,7 @@ pub struct Settings {
     max_header_list_size: Option<u32>,
     enable_connect_protocol: Option<u32>,
     // Fields for the settings frame order
-    settings_order: Option<[SettingsOrder; 2]>,
+    settings_orders: Option<SettingsOrders>,
 }
 
 /// An enum that lists all valid settings that can be sent in a SETTINGS
@@ -134,7 +152,7 @@ impl Settings {
     }
 
     pub fn set_settings_order(&mut self, order: Option<[SettingsOrder; 2]>) {
-        self.settings_order = order;
+        self.settings_orders = order.map(|order| order.into());
     }
 
     pub fn load(head: Head, payload: &[u8]) -> Result<Settings, Error> {
@@ -249,28 +267,18 @@ impl Settings {
             f(EnablePush(v));
         }
 
-        if let Some(settings_frame_order) = self.settings_order {
-            for order in settings_frame_order {
-                match order {
-                    SettingsOrder::InitialWindowSize => {
-                        if let Some(v) = self.initial_window_size {
-                            f(InitialWindowSize(v));
-                        }
-                    }
-                    SettingsOrder::MaxConcurrentStreams => {
-                        if let Some(v) = self.max_concurrent_streams {
-                            f(MaxConcurrentStreams(v));
-                        }
+        for order in self.settings_orders.unwrap_or_default().0.iter() {
+            match order {
+                SettingsOrder::InitialWindowSize => {
+                    if let Some(v) = self.initial_window_size {
+                        f(InitialWindowSize(v));
                     }
                 }
-            }
-        } else {
-            if let Some(v) = self.initial_window_size {
-                f(InitialWindowSize(v));
-            }
-
-            if let Some(v) = self.max_concurrent_streams {
-                f(MaxConcurrentStreams(v));
+                SettingsOrder::MaxConcurrentStreams => {
+                    if let Some(v) = self.max_concurrent_streams {
+                        f(MaxConcurrentStreams(v));
+                    }
+                }
             }
         }
 
