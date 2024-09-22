@@ -445,8 +445,8 @@ impl Setting {
             MaxFrameSize(v) => (5, v),
             MaxHeaderListSize(v) => (6, v),
             EnableConnectProtocol(v) => (8, v),
-            UnknownSetting8(v) => (9, v),
-            UnknownSetting9(v) => (10, v),
+            UnknownSetting8(v) => (8, v),
+            UnknownSetting9(v) => (9, v),
         };
 
         dst.put_u16(kind);
