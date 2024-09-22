@@ -5,26 +5,36 @@ use bytes::{BufMut, BytesMut};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum SettingsOrder {
+    HeaderTableSize,
+    EnablePush,
     InitialWindowSize,
     MaxConcurrentStreams,
+    MaxFrameSize,
+    MaxHeaderListSize,
+    EnableConnectProtocol,
     UnknownSetting8,
     UnknownSetting9,
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub struct SettingsOrders([SettingsOrder; 2]);
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct SettingsOrders(Vec<SettingsOrder>);
 
-impl From<[SettingsOrder; 2]> for SettingsOrders {
-    fn from(order: [SettingsOrder; 2]) -> Self {
+impl From<Vec<SettingsOrder>> for SettingsOrders {
+    fn from(order: Vec<SettingsOrder>) -> Self {
         SettingsOrders(order)
     }
 }
 
 impl Default for SettingsOrders {
     fn default() -> Self {
-        SettingsOrders([
+        SettingsOrders(vec![
+            SettingsOrder::HeaderTableSize,
+            SettingsOrder::EnablePush,
             SettingsOrder::InitialWindowSize,
             SettingsOrder::MaxConcurrentStreams,
+            SettingsOrder::MaxFrameSize,
+            SettingsOrder::MaxHeaderListSize,
+            SettingsOrder::EnableConnectProtocol,
         ])
     }
 }
@@ -165,7 +175,7 @@ impl Settings {
         self.unknown_setting_9 = Some(enable as u32);
     }
 
-    pub fn set_settings_order(&mut self, order: Option<[SettingsOrder; 2]>) {
+    pub fn set_settings_order(&mut self, order: Option<Vec<SettingsOrder>>) {
         self.settings_orders = order.map_or(SettingsOrders::default(), SettingsOrders::from);
     }
 
@@ -289,16 +299,18 @@ impl Settings {
     fn for_each<F: FnMut(Setting)>(&self, mut f: F) {
         use self::Setting::*;
 
-        if let Some(v) = self.header_table_size {
-            f(HeaderTableSize(v));
-        }
-
-        if let Some(v) = self.enable_push {
-            f(EnablePush(v));
-        }
-
         for order in self.settings_orders.0.iter() {
             match order {
+                SettingsOrder::HeaderTableSize => {
+                    if let Some(v) = self.header_table_size {
+                        f(HeaderTableSize(v));
+                    }
+                }
+                SettingsOrder::EnablePush => {
+                    if let Some(v) = self.enable_push {
+                        f(EnablePush(v));
+                    }
+                }
                 SettingsOrder::InitialWindowSize => {
                     if let Some(v) = self.initial_window_size {
                         f(InitialWindowSize(v));
@@ -319,19 +331,22 @@ impl Settings {
                         f(UnknownSetting9(v));
                     }
                 }
+                SettingsOrder::MaxFrameSize => {
+                    if let Some(v) = self.max_frame_size {
+                        f(MaxFrameSize(v));
+                    }
+                }
+                SettingsOrder::MaxHeaderListSize => {
+                    if let Some(v) = self.max_header_list_size {
+                        f(MaxHeaderListSize(v));
+                    }
+                }
+                SettingsOrder::EnableConnectProtocol => {
+                    if let Some(v) = self.enable_connect_protocol {
+                        f(EnableConnectProtocol(v));
+                    }
+                }
             }
-        }
-
-        if let Some(v) = self.max_frame_size {
-            f(MaxFrameSize(v));
-        }
-
-        if let Some(v) = self.max_header_list_size {
-            f(MaxHeaderListSize(v));
-        }
-
-        if let Some(v) = self.enable_connect_protocol {
-            f(EnableConnectProtocol(v));
         }
     }
 }
