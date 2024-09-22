@@ -690,7 +690,7 @@ impl Builder {
     }
 
     /// Settings frame order
-    pub fn settings_order(&mut self, order: [SettingsOrder; 2]) -> &mut Self {
+    pub fn settings_order(&mut self, order: Vec<SettingsOrder>) -> &mut Self {
         self.settings.set_settings_order(Some(order));
         self
     }
@@ -1171,6 +1171,18 @@ impl Builder {
     /// ```
     pub fn header_table_size(&mut self, size: u32) -> &mut Self {
         self.settings.set_header_table_size(Some(size));
+        self
+    }
+
+    /// unknown_setting8
+    pub fn unknown_setting8(&mut self, enabled: bool) -> &mut Self {
+        self.settings.set_unknown_setting_8(enabled);
+        self
+    }
+
+    /// unknown_setting8
+    pub fn unknown_setting9(&mut self, enabled: bool) -> &mut Self {
+        self.settings.set_unknown_setting_9(enabled);
         self
     }
 

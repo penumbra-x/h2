@@ -5,24 +5,36 @@ use bytes::{BufMut, BytesMut};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum SettingsOrder {
+    HeaderTableSize,
+    EnablePush,
     InitialWindowSize,
     MaxConcurrentStreams,
+    MaxFrameSize,
+    MaxHeaderListSize,
+    EnableConnectProtocol,
+    UnknownSetting8,
+    UnknownSetting9,
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub struct SettingsOrders([SettingsOrder; 2]);
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct SettingsOrders(Vec<SettingsOrder>);
 
-impl From<[SettingsOrder; 2]> for SettingsOrders {
-    fn from(order: [SettingsOrder; 2]) -> Self {
+impl From<Vec<SettingsOrder>> for SettingsOrders {
+    fn from(order: Vec<SettingsOrder>) -> Self {
         SettingsOrders(order)
     }
 }
 
 impl Default for SettingsOrders {
     fn default() -> Self {
-        SettingsOrders([
+        SettingsOrders(vec![
+            SettingsOrder::HeaderTableSize,
+            SettingsOrder::EnablePush,
             SettingsOrder::InitialWindowSize,
             SettingsOrder::MaxConcurrentStreams,
+            SettingsOrder::MaxFrameSize,
+            SettingsOrder::MaxHeaderListSize,
+            SettingsOrder::EnableConnectProtocol,
         ])
     }
 }
@@ -38,6 +50,8 @@ pub struct Settings {
     max_frame_size: Option<u32>,
     max_header_list_size: Option<u32>,
     enable_connect_protocol: Option<u32>,
+    unknown_setting_8: Option<u32>,
+    unknown_setting_9: Option<u32>,
     // Fields for the settings frame order
     settings_orders: SettingsOrders,
 }
@@ -55,6 +69,8 @@ pub enum Setting {
     MaxFrameSize(u32),
     MaxHeaderListSize(u32),
     EnableConnectProtocol(u32),
+    UnknownSetting8(u32),
+    UnknownSetting9(u32),
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Default)]
@@ -151,7 +167,15 @@ impl Settings {
         self.header_table_size = size;
     }
 
-    pub fn set_settings_order(&mut self, order: Option<[SettingsOrder; 2]>) {
+    pub fn set_unknown_setting_8(&mut self, enable: bool) {
+        self.unknown_setting_8 = Some(enable as u32);
+    }
+
+    pub fn set_unknown_setting_9(&mut self, enable: bool) {
+        self.unknown_setting_9 = Some(enable as u32);
+    }
+
+    pub fn set_settings_order(&mut self, order: Option<Vec<SettingsOrder>>) {
         self.settings_orders = order.map_or(SettingsOrders::default(), SettingsOrders::from);
     }
 
@@ -227,6 +251,22 @@ impl Settings {
                         return Err(Error::InvalidSettingValue);
                     }
                 },
+                Some(UnknownSetting8(val)) => match val {
+                    0 | 1 => {
+                        settings.unknown_setting_8 = Some(val);
+                    }
+                    _ => {
+                        return Err(Error::InvalidSettingValue);
+                    }
+                },
+                Some(UnknownSetting9(val)) => match val {
+                    0 | 1 => {
+                        settings.unknown_setting_9 = Some(val);
+                    }
+                    _ => {
+                        return Err(Error::InvalidSettingValue);
+                    }
+                },
                 None => {}
             }
         }
@@ -259,16 +299,18 @@ impl Settings {
     fn for_each<F: FnMut(Setting)>(&self, mut f: F) {
         use self::Setting::*;
 
-        if let Some(v) = self.header_table_size {
-            f(HeaderTableSize(v));
-        }
-
-        if let Some(v) = self.enable_push {
-            f(EnablePush(v));
-        }
-
         for order in self.settings_orders.0.iter() {
             match order {
+                SettingsOrder::HeaderTableSize => {
+                    if let Some(v) = self.header_table_size {
+                        f(HeaderTableSize(v));
+                    }
+                }
+                SettingsOrder::EnablePush => {
+                    if let Some(v) = self.enable_push {
+                        f(EnablePush(v));
+                    }
+                }
                 SettingsOrder::InitialWindowSize => {
                     if let Some(v) = self.initial_window_size {
                         f(InitialWindowSize(v));
@@ -279,19 +321,32 @@ impl Settings {
                         f(MaxConcurrentStreams(v));
                     }
                 }
+                SettingsOrder::UnknownSetting8 => {
+                    if let Some(v) = self.unknown_setting_8 {
+                        f(UnknownSetting8(v));
+                    }
+                }
+                SettingsOrder::UnknownSetting9 => {
+                    if let Some(v) = self.unknown_setting_9 {
+                        f(UnknownSetting9(v));
+                    }
+                }
+                SettingsOrder::MaxFrameSize => {
+                    if let Some(v) = self.max_frame_size {
+                        f(MaxFrameSize(v));
+                    }
+                }
+                SettingsOrder::MaxHeaderListSize => {
+                    if let Some(v) = self.max_header_list_size {
+                        f(MaxHeaderListSize(v));
+                    }
+                }
+                SettingsOrder::EnableConnectProtocol => {
+                    if let Some(v) = self.enable_connect_protocol {
+                        f(EnableConnectProtocol(v));
+                    }
+                }
             }
-        }
-
-        if let Some(v) = self.max_frame_size {
-            f(MaxFrameSize(v));
-        }
-
-        if let Some(v) = self.max_header_list_size {
-            f(MaxHeaderListSize(v));
-        }
-
-        if let Some(v) = self.enable_connect_protocol {
-            f(EnableConnectProtocol(v));
         }
     }
 }
@@ -328,6 +383,12 @@ impl fmt::Debug for Settings {
             }
             Setting::EnableConnectProtocol(v) => {
                 builder.field("enable_connect_protocol", &v);
+            }
+            Setting::UnknownSetting8(v) => {
+                builder.field("unknown_setting8", &v);
+            }
+            Setting::UnknownSetting9(v) => {
+                builder.field("unknown_setting9", &v);
             }
         });
 
@@ -384,6 +445,8 @@ impl Setting {
             MaxFrameSize(v) => (5, v),
             MaxHeaderListSize(v) => (6, v),
             EnableConnectProtocol(v) => (8, v),
+            UnknownSetting8(v) => (9, v),
+            UnknownSetting9(v) => (10, v),
         };
 
         dst.put_u16(kind);
