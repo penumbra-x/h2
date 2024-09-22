@@ -1174,6 +1174,18 @@ impl Builder {
         self
     }
 
+    /// unknown_setting8
+    pub fn unknown_setting8(&mut self, enabled: bool) -> &mut Self {
+        self.settings.set_unknown_setting_8(enabled);
+        self
+    }
+
+    /// unknown_setting8
+    pub fn unknown_setting9(&mut self, enabled: bool) -> &mut Self {
+        self.settings.set_unknown_setting_9(enabled);
+        self
+    }
+
     /// Sets the first stream ID to something other than 1.
     #[cfg(feature = "unstable")]
     pub fn initial_stream_id(&mut self, stream_id: u32) -> &mut Self {

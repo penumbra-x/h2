@@ -8,7 +8,7 @@ pub enum SettingsOrder {
     InitialWindowSize,
     MaxConcurrentStreams,
     UnknownSetting8,
-    UnknownSetting9
+    UnknownSetting9,
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -24,7 +24,7 @@ impl Default for SettingsOrders {
     fn default() -> Self {
         SettingsOrders([
             SettingsOrder::InitialWindowSize,
-            SettingsOrder::MaxConcurrentStreams,      
+            SettingsOrder::MaxConcurrentStreams,
         ])
     }
 }
@@ -313,12 +313,12 @@ impl Settings {
                     if let Some(v) = self.unknown_setting_8 {
                         f(UnknownSetting8(v));
                     }
-                },
+                }
                 SettingsOrder::UnknownSetting9 => {
                     if let Some(v) = self.unknown_setting_9 {
                         f(UnknownSetting9(v));
                     }
-                },
+                }
             }
         }
 
@@ -371,10 +371,10 @@ impl fmt::Debug for Settings {
             }
             Setting::UnknownSetting8(v) => {
                 builder.field("unknown_setting8", &v);
-            },
+            }
             Setting::UnknownSetting9(v) => {
                 builder.field("unknown_setting9", &v);
-            },
+            }
         });
 
         builder.finish()
