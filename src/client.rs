@@ -690,7 +690,7 @@ impl Builder {
     }
 
     /// Settings frame order
-    pub fn settings_order(&mut self, order: Vec<SettingsOrder>) -> &mut Self {
+    pub fn settings_order(&mut self, order: &'static [SettingsOrder]) -> &mut Self {
         self.settings.set_settings_order(Some(order));
         self
     }
