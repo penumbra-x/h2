@@ -17,17 +17,17 @@ pub enum SettingsOrder {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct SettingsOrders(Vec<SettingsOrder>);
+pub struct SettingsOrders(&'static [SettingsOrder]);
 
-impl From<Vec<SettingsOrder>> for SettingsOrders {
-    fn from(order: Vec<SettingsOrder>) -> Self {
+impl From<&'static [SettingsOrder]> for SettingsOrders {
+    fn from(order: &'static [SettingsOrder]) -> Self {
         SettingsOrders(order)
     }
 }
 
 impl Default for SettingsOrders {
     fn default() -> Self {
-        SettingsOrders(vec![
+        SettingsOrders(&[
             SettingsOrder::HeaderTableSize,
             SettingsOrder::EnablePush,
             SettingsOrder::InitialWindowSize,
@@ -175,7 +175,7 @@ impl Settings {
         self.unknown_setting_9 = Some(enable as u32);
     }
 
-    pub fn set_settings_order(&mut self, order: Option<Vec<SettingsOrder>>) {
+    pub fn set_settings_order(&mut self, order: Option<&'static [SettingsOrder]>) {
         self.settings_orders = order.map_or(SettingsOrders::default(), SettingsOrders::from);
     }
 
