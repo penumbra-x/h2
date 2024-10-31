@@ -11,30 +11,30 @@ pub enum SettingsOrder {
     MaxConcurrentStreams,
     MaxFrameSize,
     MaxHeaderListSize,
-    EnableConnectProtocol,
     UnknownSetting8,
     UnknownSetting9,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct SettingsOrders(&'static [SettingsOrder]);
+pub struct SettingsOrders([SettingsOrder; 8]);
 
-impl From<&'static [SettingsOrder]> for SettingsOrders {
-    fn from(order: &'static [SettingsOrder]) -> Self {
+impl From<[SettingsOrder; 8]> for SettingsOrders {
+    fn from(order: [SettingsOrder; 8]) -> Self {
         SettingsOrders(order)
     }
 }
 
 impl Default for SettingsOrders {
     fn default() -> Self {
-        SettingsOrders(&[
+        SettingsOrders([
             SettingsOrder::HeaderTableSize,
             SettingsOrder::EnablePush,
             SettingsOrder::InitialWindowSize,
             SettingsOrder::MaxConcurrentStreams,
             SettingsOrder::MaxFrameSize,
             SettingsOrder::MaxHeaderListSize,
-            SettingsOrder::EnableConnectProtocol,
+            SettingsOrder::UnknownSetting8,
+            SettingsOrder::UnknownSetting9,
         ])
     }
 }
@@ -175,7 +175,7 @@ impl Settings {
         self.unknown_setting_9 = Some(enable as u32);
     }
 
-    pub fn set_settings_order(&mut self, order: Option<&'static [SettingsOrder]>) {
+    pub fn set_settings_order(&mut self, order: Option<[SettingsOrder; 8]>) {
         self.settings_orders = order.map_or(SettingsOrders::default(), SettingsOrders::from);
     }
 
@@ -341,12 +341,11 @@ impl Settings {
                         f(MaxHeaderListSize(v));
                     }
                 }
-                SettingsOrder::EnableConnectProtocol => {
-                    if let Some(v) = self.enable_connect_protocol {
-                        f(EnableConnectProtocol(v));
-                    }
-                }
             }
+        }
+
+        if let Some(v) = self.enable_connect_protocol {
+            f(EnableConnectProtocol(v));
         }
     }
 }
