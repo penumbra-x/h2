@@ -139,7 +139,7 @@ use crate::codec::{Codec, SendError, UserError};
 use crate::ext::Protocol;
 use crate::frame::{
     Headers, Pseudo, PseudoOrder, PseudoOrders, Reason, Settings, SettingsOrder, StreamDependency,
-    StreamId
+    StreamId,
 };
 use crate::proto::{self, Error};
 use crate::{FlowControl, PingPong, RecvStream, SendStream};
