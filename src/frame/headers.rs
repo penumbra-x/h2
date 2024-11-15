@@ -74,7 +74,7 @@ pub struct Pseudo {
     pub status: Option<StatusCode>,
 
     // order of pseudo headers
-    pub order: Option<[PseudoOrder; 4]>,
+    pub order: PseudoOrders,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -83,6 +83,26 @@ pub enum PseudoOrder {
     Scheme,
     Authority,
     Path,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PseudoOrders([PseudoOrder; 4]);
+
+impl From<[PseudoOrder; 4]> for PseudoOrders {
+    fn from(src: [PseudoOrder; 4]) -> Self {
+        PseudoOrders(src)
+    }
+}
+
+impl Default for PseudoOrders {
+    fn default() -> Self {
+        PseudoOrders([
+            PseudoOrder::Method,
+            PseudoOrder::Scheme,
+            PseudoOrder::Authority,
+            PseudoOrder::Path,
+        ])
+    }
 }
 
 #[derive(Debug)]
@@ -131,6 +151,13 @@ impl Headers {
         fields: HeaderMap,
         stream_dep: Option<StreamDependency>,
     ) -> Self {
+        // If the stream dependency is set, the PRIORITY flag must be set
+        let flags = if stream_dep.is_some() {
+            HeadersFlag(END_HEADERS | PRIORITY)
+        } else {
+            HeadersFlag::default()
+        };
+
         Headers {
             stream_id,
             stream_dep,
@@ -140,7 +167,7 @@ impl Headers {
                 is_over_size: false,
                 pseudo,
             },
-            flags: HeadersFlag::default(),
+            flags,
         }
     }
 
@@ -580,7 +607,7 @@ impl Pseudo {
         method: Method,
         uri: Uri,
         protocol: Option<Protocol>,
-        pseudo_order: Option<[PseudoOrder; 4]>,
+        order: Option<PseudoOrders>,
     ) -> Self {
         let parts = uri::Parts::from(uri);
 
@@ -610,7 +637,7 @@ impl Pseudo {
             path,
             protocol,
             status: None,
-            order: pseudo_order,
+            order: order.unwrap_or_default(),
         };
 
         // If the URI includes a scheme component, add it to the pseudo headers
@@ -635,7 +662,7 @@ impl Pseudo {
             path: None,
             protocol: None,
             status: Some(status),
-            order: None,
+            order: Default::default(),
         }
     }
 
@@ -730,28 +757,26 @@ impl Iterator for Iter {
         use crate::hpack::Header::*;
 
         if let Some(ref mut pseudo) = self.pseudo {
-            if let Some(orders) = pseudo.order.as_ref() {
-                for pseudo_type in orders {
-                    match pseudo_type {
-                        PseudoOrder::Method => {
-                            if let Some(method) = pseudo.method.take() {
-                                return Some(Method(method));
-                            }
+            for pseudo_type in pseudo.order.0.iter() {
+                match pseudo_type {
+                    PseudoOrder::Method => {
+                        if let Some(method) = pseudo.method.take() {
+                            return Some(Method(method));
                         }
-                        PseudoOrder::Scheme => {
-                            if let Some(scheme) = pseudo.scheme.take() {
-                                return Some(Scheme(scheme));
-                            }
+                    }
+                    PseudoOrder::Scheme => {
+                        if let Some(scheme) = pseudo.scheme.take() {
+                            return Some(Scheme(scheme));
                         }
-                        PseudoOrder::Authority => {
-                            if let Some(authority) = pseudo.authority.take() {
-                                return Some(Authority(authority));
-                            }
+                    }
+                    PseudoOrder::Authority => {
+                        if let Some(authority) = pseudo.authority.take() {
+                            return Some(Authority(authority));
                         }
-                        PseudoOrder::Path => {
-                            if let Some(path) = pseudo.path.take() {
-                                return Some(Path(path));
-                            }
+                    }
+                    PseudoOrder::Path => {
+                        if let Some(path) = pseudo.path.take() {
+                            return Some(Path(path));
                         }
                     }
                 }
@@ -827,9 +852,9 @@ impl HeadersFlag {
 }
 
 impl Default for HeadersFlag {
-    /// Returns a `HeadersFlag` value with `END_HEADERS` and `PRIORITY` set.
+    /// Returns a `HeadersFlag` value with `END_HEADERS` set.
     fn default() -> Self {
-        HeadersFlag(END_HEADERS | PRIORITY)
+        HeadersFlag(END_HEADERS)
     }
 }
 
@@ -1048,6 +1073,8 @@ fn decoded_header_size(name: usize, value: usize) -> usize {
 
 #[cfg(test)]
 mod test {
+    use std::iter::FromIterator;
+
     use super::*;
     use crate::frame;
     use crate::hpack::{huffman, Encoder};

@@ -1,16 +1,14 @@
 # H2
 
-This project is forked from [h2](https://github.com/hyperium/h2)
-
 A Tokio aware, HTTP/2 client & server implementation for Rust.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Crates.io](https://img.shields.io/crates/v/h2.svg)](https://crates.io/crates/h2)
-[![Documentation](https://docs.rs/h2/badge.svg)][dox]
+[![Crates.io](https://img.shields.io/crates/v/rh2.svg)](https://crates.io/crates/rh2)
+[![Documentation](https://docs.rs/rh2/badge.svg)][dox]
 
 More information about this crate can be found in the [crate documentation][dox].
 
-[dox]: https://docs.rs/h2
+[dox]: https://docs.rs/rh2
 
 ## Features
 
@@ -34,19 +32,19 @@ This crate is now used by [hyper](https://github.com/hyperium/hyper), which will
 
 ## Usage
 
-To use `h2`, first add this to your `Cargo.toml`:
+To use `rh2`, first add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-h2 = "0.4"
+rh2 = "0.4"
 ```
 
 Next, add this to your crate:
 
 ```rust
-extern crate h2;
+extern crate rh2;
 
-use h2::server::Connection;
+use rh2::server::Connection;
 
 fn main() {
     // ...
@@ -71,3 +69,7 @@ actively maintained.
 [solicit]: https://github.com/mlalic/solicit
 [rust-http2]: https://github.com/stepancheg/rust-http2
 [h2spec]: https://github.com/summerwind/h2spec
+
+## Accolades
+
+The project is based on a fork of [h2](https://github.com/hyperium/h2).

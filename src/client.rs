@@ -138,7 +138,8 @@
 use crate::codec::{Codec, SendError, UserError};
 use crate::ext::Protocol;
 use crate::frame::{
-    Headers, Pseudo, PseudoOrder, Reason, Settings, SettingsOrder, StreamDependency, StreamId,
+    Headers, Pseudo, PseudoOrder, PseudoOrders, Reason, Settings, SettingsOrder, StreamDependency,
+    StreamId
 };
 use crate::proto::{self, Error};
 use crate::{FlowControl, PingPong, RecvStream, SendStream};
@@ -347,7 +348,7 @@ pub struct Builder {
     local_max_error_reset_streams: Option<usize>,
 
     /// The headers frame pseudo order
-    headers_pseudo_order: Option<[PseudoOrder; 4]>,
+    headers_pseudo_order: Option<PseudoOrders>,
 
     /// The headers frame priority
     headers_priority: Option<StreamDependency>,
@@ -677,20 +678,20 @@ impl Builder {
     }
 
     /// Set http2 header pseudo order
-    pub fn headers_psuedo(&mut self, headers_psuedo: Option<[PseudoOrder; 4]>) -> &mut Self {
-        self.headers_pseudo_order = headers_psuedo;
+    pub fn headers_psuedo(&mut self, order: [PseudoOrder; 4]) -> &mut Self {
+        self.headers_pseudo_order = Some(order.into());
         self
     }
 
     /// Set http2 header priority
-    pub fn headers_priority(&mut self, headers_priority: Option<StreamDependency>) -> &mut Self {
-        self.headers_priority = headers_priority;
+    pub fn headers_priority(&mut self, headers_priority: StreamDependency) -> &mut Self {
+        self.headers_priority = Some(headers_priority);
         self
     }
 
     /// Settings frame order
-    pub fn settings_order(&mut self, order: Option<[SettingsOrder; 2]>) -> &mut Self {
-        self.settings.set_settings_order(order);
+    pub fn settings_order(&mut self, order: [SettingsOrder; 8]) -> &mut Self {
+        self.settings.set_settings_order(Some(order));
         self
     }
 
@@ -1173,6 +1174,18 @@ impl Builder {
         self
     }
 
+    /// unknown_setting8
+    pub fn unknown_setting8(&mut self, enabled: bool) -> &mut Self {
+        self.settings.set_unknown_setting_8(enabled);
+        self
+    }
+
+    /// unknown_setting8
+    pub fn unknown_setting9(&mut self, enabled: bool) -> &mut Self {
+        self.settings.set_unknown_setting_9(enabled);
+        self
+    }
+
     /// Sets the first stream ID to something other than 1.
     #[cfg(feature = "unstable")]
     pub fn initial_stream_id(&mut self, stream_id: u32) -> &mut Self {
@@ -1614,7 +1627,7 @@ impl Peer {
         request: Request<()>,
         protocol: Option<Protocol>,
         end_of_stream: bool,
-        pseudo_order: Option<[PseudoOrder; 4]>,
+        pseudo_order: Option<PseudoOrders>,
         headers_priority: Option<StreamDependency>,
     ) -> Result<Headers, SendError> {
         use http::request::Parts;

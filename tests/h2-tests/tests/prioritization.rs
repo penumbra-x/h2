@@ -1,3 +1,4 @@
+use futures::future::{join, select};
 use futures::{pin_mut, FutureExt, StreamExt};
 
 use h2_support::prelude::*;
