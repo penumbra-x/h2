@@ -3,9 +3,10 @@ use crate::ext::Protocol;
 use crate::frame::{Error, Frame, Head, Kind};
 use crate::hpack::{self, BytesStr};
 
-use bytes::{BufMut, Bytes, BytesMut};
 use http::header::{self, HeaderName, HeaderValue};
 use http::{uri, HeaderMap, Method, Request, StatusCode, Uri};
+
+use bytes::{Buf, BufMut, Bytes, BytesMut};
 
 use std::fmt;
 use std::io::Cursor;
@@ -181,7 +182,7 @@ impl Headers {
             pad = src[0] as usize;
 
             // Drop the padding
-            let _ = src.split_to(1);
+            src.advance(1);
         }
 
         // Read the stream dependency
@@ -196,7 +197,7 @@ impl Headers {
             }
 
             // Drop the next 5 bytes
-            let _ = src.split_to(5);
+            src.advance(5);
 
             Some(stream_dep)
         } else {
@@ -267,6 +268,10 @@ impl Headers {
     #[cfg(feature = "unstable")]
     pub fn pseudo_mut(&mut self) -> &mut Pseudo {
         &mut self.header_block.pseudo
+    }
+
+    pub(crate) fn pseudo(&self) -> &Pseudo {
+        &self.header_block.pseudo
     }
 
     /// Whether it has status 1xx
@@ -445,7 +450,7 @@ impl PushPromise {
             pad = src[0] as usize;
 
             // Drop the padding
-            let _ = src.split_to(1);
+            src.advance(1);
         }
 
         if src.len() < 5 {
@@ -454,7 +459,7 @@ impl PushPromise {
 
         let (promised_id, _) = StreamId::parse(&src[..4]);
         // Drop promised_id bytes
-        let _ = src.split_to(4);
+        src.advance(4);
 
         if pad > 0 {
             if pad > src.len() {
@@ -684,7 +689,7 @@ impl EncodingHeaderBlock {
 
         // Now, encode the header payload
         let continuation = if self.hpack.len() > dst.remaining_mut() {
-            dst.put_slice(&self.hpack.split_to(dst.remaining_mut()));
+            dst.put((&mut self.hpack).take(dst.remaining_mut()));
 
             Some(Continuation {
                 stream_id: head.stream_id(),
