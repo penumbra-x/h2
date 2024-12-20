@@ -1,4 +1,21 @@
-# 0.3.26 (April 3, 2024)
+# 0.4.7 (November 19, 2024)
+
+* Fix treating HEADERS frames with a non-zero content-length but END_STREAM flag as malformed.
+* Fix notifying the stream task when automatically reset on receipt of a stream error.
+
+# 0.4.6 (August 19, 2024)
+
+* Add `current_max_send_streams()` and `current_max_recv_streams()` to `client::SendRequest`.
+* Fix sending a PROTOCOL_ERROR instead of REFUSED_STREAM when receiving oversized headers.
+* Fix notifying a PushPromise task properly.
+* Fix notifying a stream task when reset.
+
+# 0.4.5 (May 17, 2024)
+
+* Fix race condition that sometimes hung connections during shutdown.
+* Fix pseudo header construction for CONNECT and OPTIONS requests.
+
+# 0.4.4 (April 3, 2024)
 
 * Limit number of CONTINUATION frames for misbehaving connections.
 
