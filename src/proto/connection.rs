@@ -126,13 +126,11 @@ where
                     .max_concurrent_streams()
                     .map(|max| max as usize),
                 local_max_error_reset_streams: config.local_error_reset_streams_max,
+                headers_priority: config.headers_priority,
+                headers_pseudo_order: config.headers_pseudo_order,
             }
         }
-        let streams = Streams::new(
-            streams_config(&config),
-            config.headers_priority,
-            config.headers_pseudo_order,
-        );
+        let streams = Streams::new(streams_config(&config));
         Connection {
             codec,
             inner: ConnectionInner {

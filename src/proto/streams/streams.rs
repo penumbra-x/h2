@@ -35,12 +35,6 @@ where
     /// been shown to be necessary.
     send_buffer: Arc<SendBuffer<B>>,
 
-    /// Headers frame pseudo order
-    headers_pseudo_order: Option<PseudoOrders>,
-
-    /// Headers frame priority
-    headers_priority: Option<StreamDependency>,
-
     _p: ::std::marker::PhantomData<P>,
 }
 
@@ -85,6 +79,12 @@ struct Inner {
 
     /// The number of stream refs to this shared state.
     refs: usize,
+
+    /// Priority of the headers stream
+    headers_priority: Option<StreamDependency>,
+
+    /// Pseudo order of the headers stream
+    headers_pseudo_order: Option<PseudoOrders>,
 }
 
 #[derive(Debug)]
@@ -115,18 +115,12 @@ where
     B: Buf,
     P: Peer,
 {
-    pub fn new(
-        config: Config,
-        headers_priority: Option<StreamDependency>,
-        headers_pseudo_order: Option<PseudoOrders>,
-    ) -> Self {
+    pub fn new(config: Config) -> Self {
         let peer = P::r#dyn();
 
         Streams {
             inner: Inner::new(peer, config),
             send_buffer: Arc::new(SendBuffer::new()),
-            headers_pseudo_order,
-            headers_priority,
 
             _p: ::std::marker::PhantomData,
         }
@@ -292,8 +286,8 @@ where
             request,
             protocol,
             end_of_stream,
-            self.headers_pseudo_order,
-            self.headers_priority,
+            me.headers_pseudo_order,
+            me.headers_priority,
         )?;
 
         let mut stream = me.store.insert(stream.id, stream);
@@ -431,6 +425,8 @@ impl Inner {
             },
             store: Store::new(),
             refs: 1,
+            headers_priority: config.headers_priority,
+            headers_pseudo_order: config.headers_pseudo_order,
         }))
     }
 
@@ -1062,8 +1058,6 @@ where
         Streams {
             inner: self.inner.clone(),
             send_buffer: self.send_buffer.clone(),
-            headers_priority: self.headers_priority,
-            headers_pseudo_order: self.headers_pseudo_order,
             _p: ::std::marker::PhantomData,
         }
     }
