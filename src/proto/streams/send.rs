@@ -122,6 +122,18 @@ impl Send {
         Ok(())
     }
 
+    pub fn send_priority<B>(
+        &mut self,
+        frame: frame::Priority,
+        buffer: &mut Buffer<Frame<B>>,
+        stream: &mut store::Ptr,
+        task: &mut Option<Waker>,
+    ) -> Result<(), UserError> {
+        self.prioritize
+            .queue_frame(frame.into(), buffer, stream, task);
+        Ok(())
+    }
+
     pub fn send_headers<B>(
         &mut self,
         frame: frame::Headers,

@@ -280,17 +280,33 @@ where
             stream.content_length = ContentLength::Head;
         }
 
+        let priority = frame::Priority::new(
+            stream_id,
+            StreamDependency::new(StreamId::zero(), 201, false),
+        );
+
+        let mut stream = me.store.insert(stream.id, stream);
+
+        let sent =
+            me.actions
+                .send
+                .send_priority(priority, send_buffer, &mut stream, &mut me.actions.task);
+
+        if let Err(err) = sent {
+            stream.unlink();
+            stream.remove();
+            return Err(err.into());
+        }
+
         // Convert the message
         let headers = client::Peer::convert_send_message(
-            stream_id,
+            stream_id.next_id().unwrap(),
             request,
             protocol,
             end_of_stream,
             me.headers_pseudo_order,
             me.headers_priority,
         )?;
-
-        let mut stream = me.store.insert(stream.id, stream);
 
         let sent = me.actions.send.send_headers(
             headers,
