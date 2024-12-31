@@ -146,6 +146,7 @@ use crate::{FlowControl, PingPong, RecvStream, SendStream};
 
 use bytes::{Buf, Bytes};
 use http::{uri, HeaderMap, Method, Request, Response, Version};
+use std::borrow::Cow;
 use std::fmt;
 use std::future::Future;
 use std::pin::Pin;
@@ -354,7 +355,7 @@ pub struct Builder {
     headers_priority: Option<StreamDependency>,
 
     /// Priority stream list
-    priority: Option<Vec<Priority>>,
+    priority: Option<Cow<'static, [Priority]>>,
 }
 
 #[derive(Debug)]
@@ -700,7 +701,7 @@ impl Builder {
     }
 
     /// Priority stream list
-    pub fn priority(&mut self, priority: Vec<Priority>) -> &mut Self {
+    pub fn priority(&mut self, priority: Cow<'static, [Priority]>) -> &mut Self {
         self.priority = Some(priority);
         self
     }
@@ -1640,8 +1641,8 @@ impl Peer {
         end_of_stream: bool,
         pseudo_order: Option<PseudoOrders>,
         headers_priority: Option<StreamDependency>,
-        priority: Option<Vec<Priority>>,
-    ) -> Result<(Option<Vec<Priority>>, Headers), SendError> {
+        priority: Option<Cow<'static, [Priority]>>,
+    ) -> Result<(Option<Cow<'static, [Priority]>>, Headers), SendError> {
         use http::request::Parts;
 
         let (

@@ -10,6 +10,7 @@ use crate::{client, proto, server};
 
 use bytes::{Buf, Bytes};
 use http::{HeaderMap, Request, Response};
+use std::borrow::Cow;
 use std::task::{Context, Poll, Waker};
 use tokio::io::AsyncWrite;
 
@@ -87,7 +88,7 @@ struct Inner {
     headers_pseudo_order: Option<PseudoOrders>,
 
     /// Priority of the headers stream
-    priority: Option<Vec<Priority>>,
+    priority: Option<Cow<'static, [Priority]>>,
 }
 
 #[derive(Debug)]
