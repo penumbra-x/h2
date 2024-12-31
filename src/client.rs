@@ -1692,7 +1692,7 @@ impl Peer {
 
         if let Some(ref priority) = priority {
             if let Some(last_priority) = priority.last() {
-                if last_priority.stream_id().next_id()? != id {
+                if last_priority.stream_id().next_id()? > id {
                     return Err(UserError::OverflowedStreamId.into());
                 }
             }
