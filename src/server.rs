@@ -1387,6 +1387,7 @@ where
                             settings: self.builder.settings.clone(),
                             headers_priority: None,
                             headers_pseudo_order: None,
+                            priority: None,
                         },
                     );
 

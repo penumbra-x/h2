@@ -56,7 +56,7 @@ pub use self::headers::{
     PushPromiseHeaderError,
 };
 pub use self::ping::Ping;
-pub use self::priority::{Priority, StreamDependency};
+pub use self::priority::{OptionPriority, Priority, StreamDependency};
 pub use self::reason::Reason;
 pub use self::reset::Reset;
 pub use self::settings::{Settings, SettingsOrder};

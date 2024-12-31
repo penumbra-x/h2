@@ -138,8 +138,8 @@
 use crate::codec::{Codec, SendError, UserError};
 use crate::ext::Protocol;
 use crate::frame::{
-    Headers, Pseudo, PseudoOrder, PseudoOrders, Reason, Settings, SettingsOrder, StreamDependency,
-    StreamId,
+    Headers, OptionPriority, Priority, Pseudo, PseudoOrder, PseudoOrders, Reason, Settings,
+    SettingsOrder, StreamDependency, StreamId,
 };
 use crate::proto::{self, Error};
 use crate::{FlowControl, PingPong, RecvStream, SendStream};
@@ -352,6 +352,9 @@ pub struct Builder {
 
     /// The headers frame priority
     headers_priority: Option<StreamDependency>,
+
+    /// Priority stream list
+    priority: Option<Vec<OptionPriority>>,
 }
 
 #[derive(Debug)]
@@ -674,6 +677,7 @@ impl Builder {
             local_max_error_reset_streams: Some(proto::DEFAULT_LOCAL_RESET_COUNT_MAX),
             headers_pseudo_order: None,
             headers_priority: None,
+            priority: None,
         }
     }
 
@@ -692,6 +696,12 @@ impl Builder {
     /// Settings frame order
     pub fn settings_order(&mut self, order: [SettingsOrder; 8]) -> &mut Self {
         self.settings.set_settings_order(Some(order));
+        self
+    }
+
+    /// Priority stream list
+    pub fn priority(&mut self, priority: Vec<OptionPriority>) -> &mut Self {
+        self.priority = Some(priority);
         self
     }
 
@@ -1378,6 +1388,7 @@ where
                 settings: builder.settings.clone(),
                 headers_pseudo_order: builder.headers_pseudo_order,
                 headers_priority: builder.headers_priority,
+                priority: builder.priority,
             },
         );
         let send_request = SendRequest {
@@ -1623,13 +1634,14 @@ impl PushedResponseFuture {
 
 impl Peer {
     pub fn convert_send_message(
-        id: StreamId,
+        mut id: StreamId,
         request: Request<()>,
         protocol: Option<Protocol>,
         end_of_stream: bool,
         pseudo_order: Option<PseudoOrders>,
         headers_priority: Option<StreamDependency>,
-    ) -> Result<Headers, SendError> {
+        priority: Option<Vec<OptionPriority>>,
+    ) -> Result<(Option<Vec<Priority>>, Headers), SendError> {
         use http::request::Parts;
 
         let (
@@ -1677,14 +1689,29 @@ impl Peer {
             }
         }
 
+        let priority_frame = priority
+            .map(|priority| {
+                priority
+                    .into_iter()
+                    .map(|mut option_priority| {
+                        if !option_priority.is_custom_stream_id() {
+                            option_priority.set_stream_id(id);
+                            id = id.next_id()?;
+                        }
+                        Priority::try_from(option_priority).map_err(Into::into)
+                    })
+                    .collect::<Result<Vec<_>, SendError>>()
+            })
+            .transpose()?;
+
         // Create the HEADERS frame
-        let mut frame = Headers::new(id, pseudo, headers, headers_priority);
+        let mut headers_frame = Headers::new(id, pseudo, headers, headers_priority);
 
         if end_of_stream {
-            frame.set_end_stream()
+            headers_frame.set_end_stream()
         }
 
-        Ok(frame)
+        Ok((priority_frame, headers_frame))
     }
 }
 
