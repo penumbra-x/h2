@@ -2,7 +2,7 @@ use bytes::BufMut;
 
 use crate::frame::*;
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Priority {
     stream_id: StreamId,
     dependency: StreamDependency,
@@ -119,43 +119,6 @@ impl StreamDependency {
         }
         dst.put_slice(&buf);
         dst.put_u8(self.weight);
-    }
-}
-
-#[derive(Debug, Eq, PartialEq, Clone)]
-pub struct OptionPriority {
-    stream_id: Option<StreamId>,
-    dependency: StreamDependency,
-}
-
-impl OptionPriority {
-    pub fn new<S>(stream_id: S, dependency: StreamDependency) -> Self
-    where
-        S: Into<Option<StreamId>>,
-    {
-        Self {
-            stream_id: stream_id.into(),
-            dependency,
-        }
-    }
-
-    pub fn set_stream_id(&mut self, stream_id: StreamId) {
-        self.stream_id = Some(stream_id);
-    }
-
-    pub fn is_custom_stream_id(&self) -> bool {
-        self.stream_id.is_some()
-    }
-}
-
-impl TryFrom<OptionPriority> for Priority {
-    type Error = Error;
-
-    fn try_from(src: OptionPriority) -> Result<Self, Self::Error> {
-        Ok(Priority::new(
-            src.stream_id.ok_or(Error::InvalidStreamId)?,
-            src.dependency,
-        ))
     }
 }
 

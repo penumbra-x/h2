@@ -1,4 +1,4 @@
-use super::frame::{OptionPriority, PseudoOrders, StreamDependency};
+use super::frame::{Priority, PseudoOrders, StreamDependency};
 use super::recv::RecvHeaderBlockError;
 use super::store::{self, Entry, Resolve, Store};
 use super::{Buffer, Config, Counts, Prioritized, Recv, Send, Stream, StreamId};
@@ -87,7 +87,7 @@ struct Inner {
     headers_pseudo_order: Option<PseudoOrders>,
 
     /// Priority of the headers stream
-    priority: Option<Vec<OptionPriority>>,
+    priority: Option<Vec<Priority>>,
 }
 
 #[derive(Debug)]

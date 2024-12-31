@@ -1,7 +1,4 @@
-use crate::{
-    frame::{self, StreamIdOverflow},
-    proto::Error,
-};
+use crate::{frame::StreamIdOverflow, proto::Error};
 
 use std::{error, fmt, io};
 
@@ -52,9 +49,6 @@ pub enum UserError {
 
     /// Tries to send push promise to peer who has disabled server push
     PeerDisabledServerPush,
-
-    /// The frame is not valid
-    InvalidFrame,
 }
 
 // ===== impl SendError =====
@@ -88,12 +82,6 @@ impl From<StreamIdOverflow> for SendError {
     }
 }
 
-impl From<frame::Error> for SendError {
-    fn from(_: frame::Error) -> Self {
-        UserError::InvalidFrame.into()
-    }
-}
-
 // ===== impl UserError =====
 
 impl error::Error for UserError {}
@@ -115,7 +103,6 @@ impl fmt::Display for UserError {
             SendPingWhilePending => "send_ping before received previous pong",
             SendSettingsWhilePending => "sending SETTINGS before received previous ACK",
             PeerDisabledServerPush => "sending PUSH_PROMISE to peer who disabled server push",
-            InvalidFrame => "invalid frame",
         })
     }
 }
