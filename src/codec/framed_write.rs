@@ -280,12 +280,9 @@ where
                 tracing::trace!(rem = self.buf.remaining(), "encoded window_update");
             }
 
-            Frame::Priority(_) => {
-                /*
+            Frame::Priority(v) => {
                 v.encode(self.buf.get_mut());
                 tracing::trace!("encoded priority; rem={:?}", self.buf.remaining());
-                */
-                unimplemented!();
             }
             Frame::Reset(v) => {
                 v.encode(self.buf.get_mut());

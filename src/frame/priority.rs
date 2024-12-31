@@ -2,7 +2,7 @@ use bytes::BufMut;
 
 use crate::frame::*;
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Priority {
     stream_id: StreamId,
     dependency: StreamDependency,
@@ -23,6 +23,22 @@ pub struct StreamDependency {
 }
 
 impl Priority {
+    pub fn new(stream_id: StreamId, dependency: StreamDependency) -> Self {
+        assert!(stream_id != 0);
+        Priority {
+            stream_id,
+            dependency,
+        }
+    }
+
+    pub fn head(&self) -> Head {
+        Head::new(Kind::Priority, 0, self.stream_id)
+    }
+
+    pub fn stream_id(&self) -> StreamId {
+        self.stream_id
+    }
+
     pub fn load(head: Head, payload: &[u8]) -> Result<Self, Error> {
         let dependency = StreamDependency::load(payload)?;
 
@@ -34,6 +50,20 @@ impl Priority {
             stream_id: head.stream_id(),
             dependency,
         })
+    }
+
+    pub fn encode<B: BufMut>(&self, dst: &mut B) {
+        let head = self.head();
+        head.encode(5, dst);
+
+        // Priority frame payload is exactly 5 bytes
+        // Format:
+        // +---------------+
+        // |E|  Dep ID (31)|
+        // +---------------+
+        // |   Weight (8)  |
+        // +---------------+
+        self.dependency.encode(dst);
     }
 }
 
@@ -72,6 +102,14 @@ impl StreamDependency {
         self.dependency_id
     }
 
+    pub fn weight(&self) -> u8 {
+        self.weight
+    }
+
+    pub fn is_exclusive(&self) -> bool {
+        self.is_exclusive
+    }
+
     pub fn encode<T: BufMut>(&self, dst: &mut T) {
         let mut buf = [0; 4];
         let dependency_id: u32 = self.dependency_id().into();
@@ -81,5 +119,30 @@ impl StreamDependency {
         }
         dst.put_slice(&buf);
         dst.put_u8(self.weight);
+    }
+}
+
+mod tests {
+
+    #[test]
+    fn test_priority_frame() {
+        use crate::frame::{self, Priority, StreamDependency, StreamId};
+
+        let mut dependency_buf = Vec::new();
+        let dependency = StreamDependency::new(StreamId::zero(), 201, false);
+        dependency.encode(&mut dependency_buf);
+        let dependency = StreamDependency::load(&dependency_buf).unwrap();
+        assert_eq!(dependency.dependency_id(), StreamId::zero());
+        assert_eq!(dependency.weight(), 201);
+        assert!(!dependency.is_exclusive());
+
+        let priority = Priority::new(StreamId::from(3), dependency);
+        let mut priority_buf = Vec::new();
+        priority.encode(&mut priority_buf);
+        let priority = Priority::load(priority.head(), &priority_buf[frame::HEADER_LEN..]).unwrap();
+        assert_eq!(priority.stream_id(), StreamId::from(3));
+        assert_eq!(priority.dependency.dependency_id(), StreamId::zero());
+        assert_eq!(priority.dependency.weight(), 201);
+        assert!(!priority.dependency.is_exclusive());
     }
 }

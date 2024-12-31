@@ -1,4 +1,4 @@
-use super::frame::{PseudoOrders, StreamDependency};
+use super::frame::{Priority, PseudoOrders, StreamDependency};
 use super::recv::RecvHeaderBlockError;
 use super::store::{self, Entry, Resolve, Store};
 use super::{Buffer, Config, Counts, Prioritized, Recv, Send, Stream, StreamId};
@@ -10,6 +10,7 @@ use crate::{client, proto, server};
 
 use bytes::{Buf, Bytes};
 use http::{HeaderMap, Request, Response};
+use std::borrow::Cow;
 use std::task::{Context, Poll, Waker};
 use tokio::io::AsyncWrite;
 
@@ -85,6 +86,9 @@ struct Inner {
 
     /// Pseudo order of the headers stream
     headers_pseudo_order: Option<PseudoOrders>,
+
+    /// Priority of the headers stream
+    priority: Option<Cow<'static, [Priority]>>,
 }
 
 #[derive(Debug)]
@@ -281,18 +285,20 @@ where
         }
 
         // Convert the message
-        let headers = client::Peer::convert_send_message(
+        let (priority, headers) = client::Peer::convert_send_message(
             stream_id,
             request,
             protocol,
             end_of_stream,
             me.headers_pseudo_order,
             me.headers_priority,
+            me.priority.clone(),
         )?;
 
         let mut stream = me.store.insert(stream.id, stream);
 
-        let sent = me.actions.send.send_headers(
+        let sent = me.actions.send.send_headers_with_priority(
+            priority,
             headers,
             send_buffer,
             &mut stream,
@@ -427,6 +433,7 @@ impl Inner {
             refs: 1,
             headers_priority: config.headers_priority,
             headers_pseudo_order: config.headers_pseudo_order,
+            priority: config.priority,
         }))
     }
 
