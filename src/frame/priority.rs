@@ -2,9 +2,16 @@ use bytes::BufMut;
 
 use crate::frame::*;
 
+// The PRIORITY frame (type=0x2) specifies the sender-advised priority
+// of a stream [Section 5.3].  It can be sent in any stream state,
+// including idle or closed streams.
+// [Section 5.3]: https://tools.ietf.org/html/rfc7540#section-5.3
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Priority {
+    /// The stream ID of the stream that this priority frame is for
     stream_id: StreamId,
+
+    /// The stream dependency target
     dependency: StreamDependency,
 }
 
@@ -22,7 +29,10 @@ pub struct StreamDependency {
     is_exclusive: bool,
 }
 
+// ===== impl Priority =====
+
 impl Priority {
+    /// Create a new priority frame
     pub fn new(stream_id: StreamId, dependency: StreamDependency) -> Self {
         assert!(stream_id != 0);
         Priority {
@@ -31,15 +41,10 @@ impl Priority {
         }
     }
 
-    pub fn head(&self) -> Head {
-        Head::new(Kind::Priority, 0, self.stream_id)
-    }
-
-    pub fn stream_id(&self) -> StreamId {
-        self.stream_id
-    }
-
+    /// Loads the priority frame but doesn't actually do HPACK decoding.
     pub fn load(head: Head, payload: &[u8]) -> Result<Self, Error> {
+        tracing::trace!("loading priority frame; stream_id={:?}", head.stream_id());
+
         let dependency = StreamDependency::load(payload)?;
 
         if dependency.dependency_id() == head.stream_id() {
@@ -50,6 +55,14 @@ impl Priority {
             stream_id: head.stream_id(),
             dependency,
         })
+    }
+
+    pub fn head(&self) -> Head {
+        Head::new(Kind::Priority, 0, self.stream_id)
+    }
+
+    pub fn stream_id(&self) -> StreamId {
+        self.stream_id
     }
 
     pub fn encode<B: BufMut>(&self, dst: &mut B) {
@@ -76,6 +89,7 @@ impl<B> From<Priority> for Frame<B> {
 // ===== impl StreamDependency =====
 
 impl StreamDependency {
+    /// Create a new stream dependency
     pub fn new(dependency_id: StreamId, weight: u8, is_exclusive: bool) -> Self {
         StreamDependency {
             dependency_id,
@@ -84,7 +98,10 @@ impl StreamDependency {
         }
     }
 
+    /// Loads the stream dependency from a buffer
     pub fn load(src: &[u8]) -> Result<Self, Error> {
+        tracing::trace!("loading priority stream dependency; src={:?}", src);
+
         if src.len() != 5 {
             return Err(Error::InvalidPayloadLength);
         }
