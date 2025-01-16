@@ -95,8 +95,4 @@ jobs:
         with:
           token: ${{ secrets.CR_PAT }}
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') }}
-<<<<<<< HEAD
           generate_release_notes: true
-=======
-          generate_release_notes: true
->>>>>>> 55fc3bf (workflows: Add release action)
