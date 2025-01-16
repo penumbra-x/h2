@@ -3,15 +3,14 @@ name = "http2"
 # When releasing to crates.io:
 # - Update CHANGELOG.md.
 # - Create git tag
-version = "0.4.11"
+version = "0.4.12"
 license = "MIT"
 authors = ["0x676e67 <gngppz@gmail.com>"]
 description = "An HTTP/2 client and server"
-homepage = "https://github.com/penumbra-x"
 documentation = "https://docs.rs/http2"
-repository = "https://github.com/penumbra-x/h2"
+repository = "https://github.com/0x676e67/http2"
 readme = "README.md"
-keywords = ["http", "async", "non-blocking"]
+keywords = ["http", "http2", "async", "non-blocking"]
 categories = ["asynchronous", "web-programming", "network-programming"]
 exclude = ["fixtures/**", "ci/**"]
 edition = "2021"
