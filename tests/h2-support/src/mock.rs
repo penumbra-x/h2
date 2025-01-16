@@ -1,5 +1,5 @@
 use crate::SendFrame;
-use rh2 as h2;
+use rhttp2 as h2;
 
 use h2::frame::{self, Frame};
 use h2::proto::Error;

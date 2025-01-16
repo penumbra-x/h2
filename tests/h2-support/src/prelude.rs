@@ -1,5 +1,5 @@
 // Re-export H2 crate
-pub use rh2 as h2;
+pub use rhttp2 as h2;
 
 pub use h2::client;
 pub use h2::ext::Protocol;

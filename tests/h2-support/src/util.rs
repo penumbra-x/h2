@@ -1,4 +1,4 @@
-use rh2 as h2;
+use rhttp2 as h2;
 
 use bytes::{BufMut, Bytes};
 use futures::ready;

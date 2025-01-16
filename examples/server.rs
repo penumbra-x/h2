@@ -1,4 +1,4 @@
-use rh2 as h2;
+use rhttp2 as h2;
 use std::error::Error;
 
 use bytes::Bytes;

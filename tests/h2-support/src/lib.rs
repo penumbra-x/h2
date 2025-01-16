@@ -1,6 +1,6 @@
 //! Utilities to support tests.
 
-use rh2 as h2;
+use rhttp2 as h2;
 #[macro_use]
 pub mod assert;
 
