@@ -11,7 +11,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! h2 = "0.4"
+//! http2 = "0.4"
 //! ```
 //!
 //! # Layout
@@ -19,7 +19,7 @@
 //! The crate is split into [`client`] and [`server`] modules. Types that are
 //! common to both clients and servers are located at the root of the crate.
 //!
-//! See module level documentation for more details on how to use `h2`.
+//! See module level documentation for more details on how to use `http2`.
 //!
 //! # Handshake
 //!
@@ -48,7 +48,7 @@
 //!
 //! # Flow control
 //!
-//! [Flow control] is a fundamental feature of HTTP/2. The `h2` library
+//! [Flow control] is a fundamental feature of HTTP/2. The `http2` library
 //! exposes flow control to the user.
 //!
 //! An HTTP/2 client or server may not send unlimited data to the peer. When a
@@ -78,7 +78,6 @@
 //! [`server::handshake`]: server/fn.handshake.html
 //! [`client::handshake`]: client/fn.handshake.html
 
-#![doc(html_root_url = "https://docs.rs/h2/0.3.23")]
 #![deny(
     missing_debug_implementations,
     missing_docs,

@@ -66,7 +66,7 @@
 //!
 //! ```rust, no_run
 //!
-//! use h2::client;
+//! use http2::client;
 //!
 //! use http::{Request, Method};
 //! use std::error::Error;
@@ -76,12 +76,12 @@
 //! pub async fn main() -> Result<(), Box<dyn Error>> {
 //!     // Establish TCP connection to the server.
 //!     let tcp = TcpStream::connect("127.0.0.1:5928").await?;
-//!     let (h2, connection) = client::handshake(tcp).await?;
+//!     let (http2, connection) = client::handshake(tcp).await?;
 //!     tokio::spawn(async move {
 //!         connection.await.unwrap();
 //!     });
 //!
-//!     let mut h2 = h2.ready().await?;
+//!     let mut http2 = http2.ready().await?;
 //!     // Prepare the HTTP request to send to the server.
 //!     let request = Request::builder()
 //!                     .method(Method::GET)
@@ -91,7 +91,7 @@
 //!
 //!     // Send the request. The second tuple item allows the caller
 //!     // to stream a request body.
-//!     let (response, _) = h2.send_request(request, true).unwrap();
+//!     let (response, _) = http2.send_request(request, true).unwrap();
 //!
 //!     let (head, mut body) = response.await?.into_parts();
 //!
@@ -214,10 +214,10 @@ pub struct ReadySendRequest<B: Buf> {
 ///
 /// ```
 /// # use tokio::io::{AsyncRead, AsyncWrite};
-/// # use h2::client;
-/// # use h2::client::*;
+/// # use http2::client;
+/// # use http2::client::*;
 /// #
-/// # async fn doc<T>(my_io: T) -> Result<(), h2::Error>
+/// # async fn doc<T>(my_io: T) -> Result<(), http2::Error>
 /// # where T: AsyncRead + AsyncWrite + Send + Unpin + 'static,
 /// # {
 ///     let (send_request, connection) = client::handshake(my_io).await?;
@@ -292,11 +292,11 @@ pub struct PushPromises {
 ///
 /// ```
 /// # use tokio::io::{AsyncRead, AsyncWrite};
-/// # use h2::client::*;
+/// # use http2::client::*;
 /// # use bytes::Bytes;
 /// #
 /// # async fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T)
-///     -> Result<((SendRequest<Bytes>, Connection<T, Bytes>)), h2::Error>
+///     -> Result<((SendRequest<Bytes>, Connection<T, Bytes>)), http2::Error>
 /// # {
 /// // `client_fut` is a future representing the completion of the HTTP/2
 /// // handshake.
@@ -395,7 +395,7 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # use h2::client::*;
+    /// # use http2::client::*;
     /// # use http::*;
     /// # async fn doc(send_request: SendRequest<&'static [u8]>)
     /// # {
@@ -454,7 +454,7 @@ where
     /// Sending a request with no body
     ///
     /// ```rust
-    /// # use h2::client::*;
+    /// # use http2::client::*;
     /// # use http::*;
     /// # async fn doc(send_request: SendRequest<&'static [u8]>)
     /// # {
@@ -478,7 +478,7 @@ where
     /// Sending a request with a body and trailers
     ///
     /// ```rust
-    /// # use h2::client::*;
+    /// # use http2::client::*;
     /// # use http::*;
     /// # async fn doc(send_request: SendRequest<&'static [u8]>)
     /// # {
@@ -648,11 +648,11 @@ impl Builder {
     ///
     /// ```
     /// # use tokio::io::{AsyncRead, AsyncWrite};
-    /// # use h2::client::*;
+    /// # use http2::client::*;
     /// # use bytes::Bytes;
     /// #
     /// # async fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T)
-    /// # -> Result<((SendRequest<Bytes>, Connection<T, Bytes>)), h2::Error>
+    /// # -> Result<((SendRequest<Bytes>, Connection<T, Bytes>)), http2::Error>
     /// # {
     /// // `client_fut` is a future representing the completion of the HTTP/2
     /// // handshake.
@@ -720,11 +720,11 @@ impl Builder {
     ///
     /// ```
     /// # use tokio::io::{AsyncRead, AsyncWrite};
-    /// # use h2::client::*;
+    /// # use http2::client::*;
     /// # use bytes::Bytes;
     /// #
     /// # async fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T)
-    /// # -> Result<((SendRequest<Bytes>, Connection<T, Bytes>)), h2::Error>
+    /// # -> Result<((SendRequest<Bytes>, Connection<T, Bytes>)), http2::Error>
     /// # {
     /// // `client_fut` is a future representing the completion of the HTTP/2
     /// // handshake.
@@ -755,11 +755,11 @@ impl Builder {
     ///
     /// ```
     /// # use tokio::io::{AsyncRead, AsyncWrite};
-    /// # use h2::client::*;
+    /// # use http2::client::*;
     /// # use bytes::Bytes;
     /// #
     /// # async fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T)
-    /// # -> Result<((SendRequest<Bytes>, Connection<T, Bytes>)), h2::Error>
+    /// # -> Result<((SendRequest<Bytes>, Connection<T, Bytes>)), http2::Error>
     /// # {
     /// // `client_fut` is a future representing the completion of the HTTP/2
     /// // handshake.
@@ -789,11 +789,11 @@ impl Builder {
     ///
     /// ```
     /// # use tokio::io::{AsyncRead, AsyncWrite};
-    /// # use h2::client::*;
+    /// # use http2::client::*;
     /// # use bytes::Bytes;
     /// #
     /// # async fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T)
-    /// # -> Result<((SendRequest<Bytes>, Connection<T, Bytes>)), h2::Error>
+    /// # -> Result<((SendRequest<Bytes>, Connection<T, Bytes>)), http2::Error>
     /// # {
     /// // `client_fut` is a future representing the completion of the HTTP/2
     /// // handshake.
@@ -829,11 +829,11 @@ impl Builder {
     ///
     /// ```
     /// # use tokio::io::{AsyncRead, AsyncWrite};
-    /// # use h2::client::*;
+    /// # use http2::client::*;
     /// # use bytes::Bytes;
     /// #
     /// # async fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T)
-    /// # -> Result<((SendRequest<Bytes>, Connection<T, Bytes>)), h2::Error>
+    /// # -> Result<((SendRequest<Bytes>, Connection<T, Bytes>)), http2::Error>
     /// # {
     /// // `client_fut` is a future representing the completion of the HTTP/2
     /// // handshake.
@@ -867,7 +867,7 @@ impl Builder {
     /// setting.
     ///
     /// Also note that if the remote *does* exceed the value set here, it is not
-    /// a protocol level error. Instead, the `h2` library will immediately reset
+    /// a protocol level error. Instead, the `http2` library will immediately reset
     /// the stream.
     ///
     /// See [Section 5.1.2] in the HTTP/2 spec for more details.
@@ -878,11 +878,11 @@ impl Builder {
     ///
     /// ```
     /// # use tokio::io::{AsyncRead, AsyncWrite};
-    /// # use h2::client::*;
+    /// # use http2::client::*;
     /// # use bytes::Bytes;
     /// #
     /// # async fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T)
-    /// # -> Result<((SendRequest<Bytes>, Connection<T, Bytes>)), h2::Error>
+    /// # -> Result<((SendRequest<Bytes>, Connection<T, Bytes>)), http2::Error>
     /// # {
     /// // `client_fut` is a future representing the completion of the HTTP/2
     /// // handshake.
@@ -924,11 +924,11 @@ impl Builder {
     ///
     /// ```
     /// # use tokio::io::{AsyncRead, AsyncWrite};
-    /// # use h2::client::*;
+    /// # use http2::client::*;
     /// # use bytes::Bytes;
     /// #
     /// # async fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T)
-    /// # -> Result<((SendRequest<Bytes>, Connection<T, Bytes>)), h2::Error>
+    /// # -> Result<((SendRequest<Bytes>, Connection<T, Bytes>)), http2::Error>
     /// # {
     /// // `client_fut` is a future representing the completion of the HTTP/2
     /// // handshake.
@@ -969,11 +969,11 @@ impl Builder {
     ///
     /// ```
     /// # use tokio::io::{AsyncRead, AsyncWrite};
-    /// # use h2::client::*;
+    /// # use http2::client::*;
     /// # use bytes::Bytes;
     /// #
     /// # async fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T)
-    /// # -> Result<((SendRequest<Bytes>, Connection<T, Bytes>)), h2::Error>
+    /// # -> Result<((SendRequest<Bytes>, Connection<T, Bytes>)), http2::Error>
     /// # {
     /// // `client_fut` is a future representing the completion of the HTTP/2
     /// // handshake.
@@ -1014,12 +1014,12 @@ impl Builder {
     ///
     /// ```
     /// # use tokio::io::{AsyncRead, AsyncWrite};
-    /// # use h2::client::*;
+    /// # use http2::client::*;
     /// # use std::time::Duration;
     /// # use bytes::Bytes;
     /// #
     /// # async fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T)
-    /// # -> Result<((SendRequest<Bytes>, Connection<T, Bytes>)), h2::Error>
+    /// # -> Result<((SendRequest<Bytes>, Connection<T, Bytes>)), http2::Error>
     /// # {
     /// // `client_fut` is a future representing the completion of the HTTP/2
     /// // handshake.
@@ -1075,11 +1075,11 @@ impl Builder {
     ///
     /// ```
     /// # use tokio::io::{AsyncRead, AsyncWrite};
-    /// # use h2::client::*;
+    /// # use http2::client::*;
     /// # use bytes::Bytes;
     /// #
     /// # async fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T)
-    /// # -> Result<((SendRequest<Bytes>, Connection<T, Bytes>)), h2::Error>
+    /// # -> Result<((SendRequest<Bytes>, Connection<T, Bytes>)), http2::Error>
     /// # {
     /// // `client_fut` is a future representing the completion of the HTTP/2
     /// // handshake.
@@ -1130,12 +1130,12 @@ impl Builder {
     ///
     /// ```
     /// # use tokio::io::{AsyncRead, AsyncWrite};
-    /// # use h2::client::*;
+    /// # use http2::client::*;
     /// # use std::time::Duration;
     /// # use bytes::Bytes;
     /// #
     /// # async fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T)
-    /// # -> Result<((SendRequest<Bytes>, Connection<T, Bytes>)), h2::Error>
+    /// # -> Result<((SendRequest<Bytes>, Connection<T, Bytes>)), http2::Error>
     /// # {
     /// // `client_fut` is a future representing the completion of the HTTP/2
     /// // handshake.
@@ -1164,11 +1164,11 @@ impl Builder {
     ///
     /// ```
     /// # use tokio::io::{AsyncRead, AsyncWrite};
-    /// # use h2::client::*;
+    /// # use http2::client::*;
     /// # use bytes::Bytes;
     /// #
     /// # async fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T)
-    /// # -> Result<((SendRequest<Bytes>, Connection<T, Bytes>)), h2::Error>
+    /// # -> Result<((SendRequest<Bytes>, Connection<T, Bytes>)), http2::Error>
     /// # {
     /// // `client_fut` is a future representing the completion of the HTTP/2
     /// // handshake.
@@ -1234,11 +1234,11 @@ impl Builder {
     ///
     /// ```
     /// # use tokio::io::{AsyncRead, AsyncWrite};
-    /// # use h2::client::*;
+    /// # use http2::client::*;
     /// # use bytes::Bytes;
     /// #
     /// # async fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T)
-    ///     -> Result<((SendRequest<Bytes>, Connection<T, Bytes>)), h2::Error>
+    ///     -> Result<((SendRequest<Bytes>, Connection<T, Bytes>)), http2::Error>
     /// # {
     /// // `client_fut` is a future representing the completion of the HTTP/2
     /// // handshake.
@@ -1255,10 +1255,10 @@ impl Builder {
     ///
     /// ```
     /// # use tokio::io::{AsyncRead, AsyncWrite};
-    /// # use h2::client::*;
+    /// # use http2::client::*;
     /// #
     /// # async fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T)
-    /// # -> Result<((SendRequest<&'static [u8]>, Connection<T, &'static [u8]>)), h2::Error>
+    /// # -> Result<((SendRequest<&'static [u8]>, Connection<T, &'static [u8]>)), http2::Error>
     /// # {
     /// // `client_fut` is a future representing the completion of the HTTP/2
     /// // handshake.
@@ -1308,10 +1308,10 @@ impl Default for Builder {
 ///
 /// ```
 /// # use tokio::io::{AsyncRead, AsyncWrite};
-/// # use h2::client;
-/// # use h2::client::*;
+/// # use http2::client;
+/// # use http2::client::*;
 /// #
-/// # async fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T) -> Result<(), h2::Error>
+/// # async fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T) -> Result<(), http2::Error>
 /// # {
 /// let (send_request, connection) = client::handshake(my_io).await?;
 /// // The HTTP/2 handshake has completed, now start polling

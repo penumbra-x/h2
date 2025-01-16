@@ -705,7 +705,7 @@ impl EncodingHeaderBlock {
     {
         let head_pos = dst.get_ref().len();
 
-        // At this point, we don't know how big the h2 frame will be.
+        // At this point, we don't know how big the http2 frame will be.
         // So, we write the head with length 0, then write the body, and
         // finally write the length once we know the size.
         head.encode(0, dst);
