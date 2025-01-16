@@ -18,7 +18,7 @@ use std::time::Instant;
 /// Thus, `ref_count` can be zero and the stream still has to be kept around.
 #[derive(Debug)]
 pub(super) struct Stream {
-    /// The h2 stream identifier
+    /// The http2 stream identifier
     pub id: StreamId,
 
     /// Current state of the stream

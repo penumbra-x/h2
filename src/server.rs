@@ -55,7 +55,7 @@
 //! # Shutting down the server
 //!
 //! Graceful shutdown of the server is [not yet
-//! implemented](https://github.com/hyperium/h2/issues/69).
+//! implemented](https://github.com/hyperium/http2/issues/69).
 //!
 //! # Example
 //!
@@ -64,7 +64,7 @@
 //! will use the HTTP/2 protocol without prior negotiation.
 //!
 //! ```no_run
-//! use h2::server;
+//! use http2::server;
 //! use http::{Response, StatusCode};
 //! use tokio::net::TcpListener;
 //!
@@ -78,10 +78,10 @@
 //!             // Spawn a new task to process each connection.
 //!             tokio::spawn(async {
 //!                 // Start the HTTP/2 connection handshake
-//!                 let mut h2 = server::handshake(socket).await.unwrap();
+//!                 let mut http2 = server::handshake(socket).await.unwrap();
 //!                 // Accept all inbound HTTP/2 streams sent over the
 //!                 // connection.
-//!                 while let Some(request) = h2.accept().await {
+//!                 while let Some(request) = http2.accept().await {
 //!                     let (request, mut respond) = request.unwrap();
 //!                     println!("Received request: {:?}", request);
 //!
@@ -176,8 +176,8 @@ pub struct Handshake<T, B: Buf = Bytes> {
 ///
 /// ```
 /// # use tokio::io::{AsyncRead, AsyncWrite};
-/// # use h2::server;
-/// # use h2::server::*;
+/// # use http2::server;
+/// # use http2::server::*;
 /// #
 /// # async fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T) {
 /// let mut server = server::handshake(my_io).await.unwrap();
@@ -216,7 +216,7 @@ pub struct Connection<T, B: Buf> {
 ///
 /// ```
 /// # use tokio::io::{AsyncRead, AsyncWrite};
-/// # use h2::server::*;
+/// # use http2::server::*;
 /// #
 /// # fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T)
 /// # -> Handshake<T>
@@ -350,8 +350,8 @@ const PREFACE: [u8; 24] = *b"PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
 ///
 /// ```
 /// # use tokio::io::{AsyncRead, AsyncWrite};
-/// # use h2::server;
-/// # use h2::server::*;
+/// # use http2::server;
+/// # use http2::server::*;
 /// #
 /// # async fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T)
 /// # {
@@ -522,7 +522,7 @@ where
     /// After flushing the GOAWAY frame, the connection is closed. Any
     /// outstanding streams do not prevent the connection from closing. This
     /// should usually be reserved for shutting down when something bad
-    /// external to `h2` has happened, and open streams cannot be properly
+    /// external to `http2` has happened, and open streams cannot be properly
     /// handled.
     ///
     /// For graceful shutdowns, see [`graceful_shutdown`](Connection::graceful_shutdown).
@@ -626,7 +626,7 @@ impl Builder {
     ///
     /// ```
     /// # use tokio::io::{AsyncRead, AsyncWrite};
-    /// # use h2::server::*;
+    /// # use http2::server::*;
     /// #
     /// # fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T)
     /// # -> Handshake<T>
@@ -669,7 +669,7 @@ impl Builder {
     ///
     /// ```
     /// # use tokio::io::{AsyncRead, AsyncWrite};
-    /// # use h2::server::*;
+    /// # use http2::server::*;
     /// #
     /// # fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T)
     /// # -> Handshake<T>
@@ -703,7 +703,7 @@ impl Builder {
     ///
     /// ```
     /// # use tokio::io::{AsyncRead, AsyncWrite};
-    /// # use h2::server::*;
+    /// # use http2::server::*;
     /// #
     /// # fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T)
     /// # -> Handshake<T>
@@ -736,7 +736,7 @@ impl Builder {
     ///
     /// ```
     /// # use tokio::io::{AsyncRead, AsyncWrite};
-    /// # use h2::server::*;
+    /// # use http2::server::*;
     /// #
     /// # fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T)
     /// # -> Handshake<T>
@@ -775,7 +775,7 @@ impl Builder {
     ///
     /// ```
     /// # use tokio::io::{AsyncRead, AsyncWrite};
-    /// # use h2::server::*;
+    /// # use http2::server::*;
     /// #
     /// # fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T)
     /// # -> Handshake<T>
@@ -812,7 +812,7 @@ impl Builder {
     /// setting.
     ///
     /// Also note that if the remote *does* exceed the value set here, it is not
-    /// a protocol level error. Instead, the `h2` library will immediately reset
+    /// a protocol level error. Instead, the `http2` library will immediately reset
     /// the stream.
     ///
     /// See [Section 5.1.2] in the HTTP/2 spec for more details.
@@ -823,7 +823,7 @@ impl Builder {
     ///
     /// ```
     /// # use tokio::io::{AsyncRead, AsyncWrite};
-    /// # use h2::server::*;
+    /// # use http2::server::*;
     /// #
     /// # fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T)
     /// # -> Handshake<T>
@@ -869,7 +869,7 @@ impl Builder {
     ///
     /// ```
     /// # use tokio::io::{AsyncRead, AsyncWrite};
-    /// # use h2::server::*;
+    /// # use http2::server::*;
     /// #
     /// # fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T)
     /// # -> Handshake<T>
@@ -930,7 +930,7 @@ impl Builder {
     ///
     /// ```
     /// # use tokio::io::{AsyncRead, AsyncWrite};
-    /// # use h2::server::*;
+    /// # use http2::server::*;
     /// #
     /// # fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T)
     /// # -> Handshake<T>
@@ -994,7 +994,7 @@ impl Builder {
     ///
     /// ```
     /// # use tokio::io::{AsyncRead, AsyncWrite};
-    /// # use h2::server::*;
+    /// # use http2::server::*;
     /// # use std::time::Duration;
     /// #
     /// # fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T)
@@ -1045,7 +1045,7 @@ impl Builder {
     ///
     /// ```
     /// # use tokio::io::{AsyncRead, AsyncWrite};
-    /// # use h2::server::*;
+    /// # use http2::server::*;
     /// #
     /// # fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T)
     /// # -> Handshake<T>
@@ -1065,7 +1065,7 @@ impl Builder {
     ///
     /// ```
     /// # use tokio::io::{AsyncRead, AsyncWrite};
-    /// # use h2::server::*;
+    /// # use http2::server::*;
     /// #
     /// # fn doc<T: AsyncRead + AsyncWrite + Unpin>(my_io: T)
     /// # -> Handshake<T, &'static [u8]>
