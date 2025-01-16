@@ -131,10 +131,10 @@ impl Send {
         counts: &mut Counts,
         task: &mut Option<Waker>,
     ) -> Result<(), UserError> {
-        self.send_headers_with_priority(None, frame, buffer, stream, counts, task)
+        self.send_priority_and_headers(None, frame, buffer, stream, counts, task)
     }
 
-    pub fn send_headers_with_priority<B>(
+    pub fn send_priority_and_headers<B>(
         &mut self,
         priority_frame: Option<Cow<'static, [frame::Priority]>>,
         headers_frame: frame::Headers,
@@ -143,12 +143,6 @@ impl Send {
         counts: &mut Counts,
         task: &mut Option<Waker>,
     ) -> Result<(), UserError> {
-        tracing::trace!(
-            "send_headers; frame={:?}; init_window={:?}",
-            headers_frame,
-            self.init_window_sz
-        );
-
         Self::check_headers(headers_frame.fields())?;
 
         let end_stream = headers_frame.is_end_stream();
@@ -170,10 +164,17 @@ impl Send {
                     priority_frame,
                     self.init_window_sz
                 );
+
                 self.prioritize
                     .queue_frame(priority_frame.into(), buffer, stream, task);
             }
         }
+
+        tracing::trace!(
+            "send_headers; frame={:?}; init_window={:?}",
+            headers_frame,
+            self.init_window_sz
+        );
 
         // Queue the frame for sending
         //

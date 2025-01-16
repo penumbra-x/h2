@@ -297,7 +297,7 @@ where
 
         let mut stream = me.store.insert(stream.id, stream);
 
-        let sent = me.actions.send.send_headers_with_priority(
+        let sent = me.actions.send.send_priority_and_headers(
             priority,
             headers,
             send_buffer,
