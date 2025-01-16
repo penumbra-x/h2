@@ -1,5 +1,5 @@
 [package]
-name = "rh2"
+name = "http2"
 # When releasing to crates.io:
 # - Update CHANGELOG.md.
 # - Create git tag
@@ -8,7 +8,7 @@ license = "MIT"
 authors = ["0x676e67 <gngppz@gmail.com>"]
 description = "An HTTP/2 client and server"
 homepage = "https://github.com/penumbra-x"
-documentation = "https://docs.rs/rh2"
+documentation = "https://docs.rs/http2"
 repository = "https://github.com/penumbra-x/h2"
 readme = "README.md"
 keywords = ["http", "async", "non-blocking"]

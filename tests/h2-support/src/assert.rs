@@ -1,4 +1,4 @@
-use rh2 as h2;
+use http2 as h2;
 #[macro_export]
 macro_rules! assert_closed {
     ($transport:expr) => {{

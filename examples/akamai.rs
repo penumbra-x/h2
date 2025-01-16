@@ -1,6 +1,6 @@
 use h2::client;
 use http::{Method, Request};
-use rh2 as h2;
+use http2 as h2;
 use tokio::net::TcpStream;
 use tokio_rustls::TlsConnector;
 

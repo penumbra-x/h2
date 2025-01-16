@@ -1,4 +1,4 @@
-use rh2 as h2;
+use http2 as h2;
 use std::convert::TryInto;
 use std::fmt;
 
