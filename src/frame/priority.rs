@@ -32,9 +32,15 @@ pub struct StreamDependency {
 // ===== impl Priority =====
 
 impl Priority {
-    /// Create a new priority frame
+    /// Create a new priority frame.
+    ///
+    /// # Parameters
+    /// - `stream_id`: The ID of the stream. This can be any valid stream ID, including 0.
+    /// - `dependency`: The stream dependency information.
+    ///
+    /// # Returns
+    /// A new `Priority` frame.
     pub fn new(stream_id: StreamId, dependency: StreamDependency) -> Self {
-        assert!(stream_id != 0);
         Priority {
             stream_id,
             dependency,
@@ -128,13 +134,12 @@ impl StreamDependency {
     }
 
     pub fn encode<T: BufMut>(&self, dst: &mut T) {
-        let mut buf = [0; 4];
-        let dependency_id: u32 = self.dependency_id().into();
-        buf[0..4].copy_from_slice(&dependency_id.to_be_bytes());
+        const STREAM_ID_MASK: u32 = 1 << 31;
+        let mut dependency_id = self.dependency_id().into();
         if self.is_exclusive {
-            buf[0] |= 0x80;
+            dependency_id |= STREAM_ID_MASK;
         }
-        dst.put_slice(&buf);
+        dst.put_u32(dependency_id);
         dst.put_u8(self.weight);
     }
 }
