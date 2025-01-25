@@ -1702,8 +1702,10 @@ impl Peer {
             }
         }
 
+        // Check the priority list for overflowed stream IDs
         if let Some(ref priority) = priority {
             if let Some(last_priority) = priority.last() {
+                // Ensure the next stream ID does not overflow
                 if last_priority.stream_id().next_id()? > id {
                     return Err(UserError::OverflowedStreamId.into());
                 }
