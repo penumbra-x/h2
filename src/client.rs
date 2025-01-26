@@ -1186,9 +1186,9 @@ impl Builder {
         self
     }
 
-    /// unknown_setting8
+    /// Sets the enable connect protocol.
     pub fn unknown_setting8(&mut self, enabled: bool) -> &mut Self {
-        self.settings.set_unknown_setting_8(enabled);
+        self.settings.set_enable_connect_protocol(Some(enabled as _));
         self
     }
 

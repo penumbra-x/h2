@@ -51,7 +51,6 @@ pub struct Settings {
     max_frame_size: Option<u32>,
     max_header_list_size: Option<u32>,
     enable_connect_protocol: Option<u32>,
-    unknown_setting_8: Option<u32>,
     unknown_setting_9: Option<u32>,
     // Fields for the settings frame order
     settings_orders: SettingsOrders,
@@ -70,7 +69,6 @@ pub enum Setting {
     MaxFrameSize(u32),
     MaxHeaderListSize(u32),
     EnableConnectProtocol(u32),
-    UnknownSetting8(u32),
     UnknownSetting9(u32),
 }
 
@@ -168,10 +166,6 @@ impl Settings {
         self.header_table_size = size;
     }
 
-    pub fn set_unknown_setting_8(&mut self, enable: bool) {
-        self.unknown_setting_8 = Some(enable as u32);
-    }
-
     pub fn set_unknown_setting_9(&mut self, enable: bool) {
         self.unknown_setting_9 = Some(enable as u32);
     }
@@ -252,14 +246,6 @@ impl Settings {
                         return Err(Error::InvalidSettingValue);
                     }
                 },
-                Some(UnknownSetting8(val)) => match val {
-                    0 | 1 => {
-                        settings.unknown_setting_8 = Some(val);
-                    }
-                    _ => {
-                        return Err(Error::InvalidSettingValue);
-                    }
-                },
                 Some(UnknownSetting9(val)) => match val {
                     0 | 1 => {
                         settings.unknown_setting_9 = Some(val);
@@ -323,8 +309,8 @@ impl Settings {
                     }
                 }
                 SettingsOrder::UnknownSetting8 => {
-                    if let Some(v) = self.unknown_setting_8 {
-                        f(UnknownSetting8(v));
+                    if let Some(v) = self.enable_connect_protocol {
+                        f(EnableConnectProtocol(v));
                     }
                 }
                 SettingsOrder::UnknownSetting9 => {
@@ -343,10 +329,6 @@ impl Settings {
                     }
                 }
             }
-        }
-
-        if let Some(v) = self.enable_connect_protocol {
-            f(EnableConnectProtocol(v));
         }
     }
 }
@@ -383,9 +365,6 @@ impl fmt::Debug for Settings {
             }
             Setting::EnableConnectProtocol(v) => {
                 builder.field("enable_connect_protocol", &v);
-            }
-            Setting::UnknownSetting8(v) => {
-                builder.field("unknown_setting8", &v);
             }
             Setting::UnknownSetting9(v) => {
                 builder.field("unknown_setting9", &v);
@@ -445,7 +424,6 @@ impl Setting {
             MaxFrameSize(v) => (5, v),
             MaxHeaderListSize(v) => (6, v),
             EnableConnectProtocol(v) => (8, v),
-            UnknownSetting8(v) => (8, v),
             UnknownSetting9(v) => (9, v),
         };
 
