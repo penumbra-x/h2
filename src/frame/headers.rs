@@ -604,12 +604,7 @@ impl Continuation {
 // ===== impl Pseudo =====
 
 impl Pseudo {
-    pub fn request(
-        method: Method,
-        uri: Uri,
-        protocol: Option<Protocol>,
-        order: Option<PseudoOrders>,
-    ) -> Self {
+    pub fn request(method: Method, uri: Uri, protocol: Option<Protocol>) -> Self {
         let parts = uri::Parts::from(uri);
 
         let (scheme, path) = if method == Method::CONNECT && protocol.is_none() {
@@ -638,7 +633,7 @@ impl Pseudo {
             path,
             protocol,
             status: None,
-            order: order.unwrap_or_default(),
+            order: Default::default(),
         };
 
         // If the URI includes a scheme component, add it to the pseudo headers
@@ -688,6 +683,10 @@ impl Pseudo {
 
     pub fn set_authority(&mut self, authority: BytesStr) {
         self.authority = Some(authority);
+    }
+
+    pub fn set_pseudo_order(&mut self, order: PseudoOrders) {
+        self.order = order;
     }
 
     /// Whether it has status 1xx
@@ -1135,7 +1134,6 @@ mod test {
                 Method::CONNECT,
                 Uri::from_static("https://example.com:8443"),
                 None,
-                Default::default(),
             ),
             Pseudo {
                 method: Method::CONNECT.into(),
@@ -1149,7 +1147,6 @@ mod test {
                 Method::CONNECT,
                 Uri::from_static("https://example.com/test"),
                 None,
-                Default::default(),
             ),
             Pseudo {
                 method: Method::CONNECT.into(),
@@ -1159,12 +1156,7 @@ mod test {
         );
 
         assert_eq!(
-            Pseudo::request(
-                Method::CONNECT,
-                Uri::from_static("example.com:8443"),
-                None,
-                Default::default(),
-            ),
+            Pseudo::request(Method::CONNECT, Uri::from_static("example.com:8443"), None,),
             Pseudo {
                 method: Method::CONNECT.into(),
                 authority: BytesStr::from_static("example.com:8443").into(),
@@ -1185,7 +1177,6 @@ mod test {
                 Method::CONNECT,
                 Uri::from_static("https://example.com:8443"),
                 Protocol::from_static("the-bread-protocol").into(),
-                Default::default(),
             ),
             Pseudo {
                 method: Method::CONNECT.into(),
@@ -1202,7 +1193,6 @@ mod test {
                 Method::CONNECT,
                 Uri::from_static("https://example.com:8443/test"),
                 Protocol::from_static("the-bread-protocol").into(),
-                Default::default(),
             ),
             Pseudo {
                 method: Method::CONNECT.into(),
@@ -1219,7 +1209,6 @@ mod test {
                 Method::CONNECT,
                 Uri::from_static("http://example.com/a/b/c"),
                 Protocol::from_static("the-bread-protocol").into(),
-                Default::default(),
             ),
             Pseudo {
                 method: Method::CONNECT.into(),
@@ -1238,12 +1227,7 @@ mod test {
         // these MUST include a ":path" pseudo-header field with a value of '*' (see Section 7.1 of [HTTP]).
         // See: https://datatracker.ietf.org/doc/html/rfc9113#section-8.3.1
         assert_eq!(
-            Pseudo::request(
-                Method::OPTIONS,
-                Uri::from_static("example.com:8080"),
-                None,
-                Default::default(),
-            ),
+            Pseudo::request(Method::OPTIONS, Uri::from_static("example.com:8080"), None,),
             Pseudo {
                 method: Method::OPTIONS.into(),
                 authority: BytesStr::from_static("example.com:8080").into(),
@@ -1271,7 +1255,6 @@ mod test {
                     method.clone(),
                     Uri::from_static("http://example.com:8080"),
                     None,
-                    Default::default(),
                 ),
                 Pseudo {
                     method: method.clone().into(),
@@ -1286,7 +1269,6 @@ mod test {
                     method.clone(),
                     Uri::from_static("https://example.com/a/b/c"),
                     None,
-                    Default::default(),
                 ),
                 Pseudo {
                     method: method.into(),

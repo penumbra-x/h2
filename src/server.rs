@@ -1502,7 +1502,7 @@ impl Peer {
             _,
         ) = request.into_parts();
 
-        let pseudo = Pseudo::request(method, uri, None, None);
+        let pseudo = Pseudo::request(method, uri, None);
 
         Ok(frame::PushPromise::new(
             stream_id,
